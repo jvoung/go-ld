@@ -20,5 +20,11 @@ const (
 )
 
 func DetermineFileType() FileType {
-	
+	return UNKNOWN_FILE
+}
+
+func ValidateFiles(files []string) (types map[string]FileType, err error) {
+	types = make(map[string]FileType, len(files))
+	err = nil
+	return
 }
