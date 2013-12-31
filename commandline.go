@@ -22,7 +22,7 @@ func init() {
 	flag.StringVar(&Outfile, "o", defaultOutfile, usage + " (shorthand)")
 }
 
-// Search paths, specified by -L <path1> -L <path2>.
+// Search paths for "-l" libraries, specified by -L <path1> -L <path2>.
 // Unfortunately, the go flag library doesn't seem to support the space-less
 // variant of flags "-L<path1>".
 type search_paths []string
@@ -37,7 +37,7 @@ func (p *search_paths) Set(value string) error {
 // The parsed search paths.
 var SearchPaths search_paths
 func init() {
-	flag.Var(&SearchPaths, "L", "Add a library search path")
+	flag.Var(&SearchPaths, "L", "Add a library (-l) search path")
 }
 
 
