@@ -8,6 +8,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 func main() {
@@ -22,12 +23,20 @@ func main() {
 	full_paths := append(inputs, lib_full_paths...)
 	fmt.Printf("Full paths of inputs and libs: %v\n", full_paths)
 
-	// Validate that the inputs are really ELF or .a files full of ELF.
-	file_map, err := ValidateFiles(full_paths)
-	if err != nil {
-		fmt.Println("Error: some files aren't ELF...")
-		return
+	// Open the files.
+	fhandles := make(map[string] *os.File, len(full_paths)) 
+	for _, fname := range full_paths {
+		f, err := os.Open(fname)
+		if err != nil {
+			fmt.Print("Failed to open file:", fname, "error:", err)
+			return
+		}
+		defer f.Close()
+		fhandles[fname] = f
 	}
+
+	// Validate that the inputs are really ELF or .a files full of ELF.
+	file_map := ValidateFiles(fhandles)
 	fmt.Println("File types: ", file_map)
 
 	// Map the files -> symbol tables.
