@@ -20,6 +20,10 @@ func fileExists(filename string) bool {
 func DetermineFilepaths(input_paths []string, search_paths []string) []string {
 	out := make([]string, 0, len(input_paths))
 	for _, p := range input_paths {
+		if fileExists(p) {
+			out = append(out, p)
+			continue
+		}
 		result := ""
 		for _, sp := range search_paths {
 			joined := path.Join(sp, p)

@@ -17,3 +17,6 @@ func TestX8664BaseDir() string {
 func TestARMBaseDir() string {
 	return path.Join(TestBaseDir, "arm")
 }
+func TestLibDir() string {
+	return path.Join(TestBaseDir, "test_libdir")
+}
