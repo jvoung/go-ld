@@ -12,7 +12,7 @@ import (
 )
 
 func CheckARFiles(t *testing.T, base_dir string) {
-	fnames := [...]string{
+	fnames := []string{
 		path.Join(base_dir, "libcrt_platform.a"),
 		path.Join(base_dir, "libgcc.a"),
 		path.Join(base_dir, "libpnacl_irt_shim.a") }
@@ -36,7 +36,7 @@ func CheckARFiles(t *testing.T, base_dir string) {
 }
 
 func CheckELFFiles(t *testing.T, base_dir string) {
-	fnames := [...]string{
+	fnames := []string{
 		path.Join(base_dir, "crtbegin.o"),
 		path.Join(base_dir, "crtend.o")}
 
@@ -59,7 +59,7 @@ func CheckELFFiles(t *testing.T, base_dir string) {
 }
 
 func CheckBaseDirs(t *testing.T, check_func func(*testing.T, string)) {
-	base_dirs := [...]string{
+	base_dirs := []string{
 		TestX8632BaseDir(), TestX8664BaseDir(), TestARMBaseDir()}
 	for _, b := range base_dirs {
 		check_func(t, b)
