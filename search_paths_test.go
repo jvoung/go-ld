@@ -10,39 +10,29 @@ import (
 	"testing"
 )
 
+func ExpectEqStr(t *testing.T, s1 string, s2 string) {
+	if s1 != s2 {
+		t.Errorf("Expected %s == %s", s1, s2)
+	}
+}
+
 func TestNoPathsNoDirs(t *testing.T) {
 	DetermineFilepaths([]string{}, []string{})
 }
 
-func TestOneSearchPath(t *testing.T) {
-	sp := []string{TestX8632BaseDir()}
-	files := []string{"libcrt_platform.a", "libgcc.a",
-		path.Join(TestX8632BaseDir(), "libpnacl_irt_shim.a")}
-	results := DetermineFilepaths(files, sp)
-	if results[0] != path.Join(TestX8632BaseDir(), files[0]) {
-		t.Errorf("Result %s is wrong", results[0])
-	}
-	if results[1] != path.Join(TestX8632BaseDir(), files[1]) {
-		t.Errorf("Result %s is wrong", results[1])
-	}
-	if results[2] != files[2] {
-		t.Errorf("Result %s is wrong", results[2])
-	}
-}
-
 func CheckMultiSearchPaths(t *testing.T, sp []string) {
 	files := []string{"libcrt_platform.a", "libgcc.a",
-		path.Join(sp[1], "libpnacl_irt_shim.a")}
+		// Also add a fully-qualified library path.
+		path.Join(sp[len(sp) - 1], "libpnacl_irt_shim.a")}
 	results := DetermineFilepaths(files, sp)
-	if results[0] != path.Join(sp[0], files[0]) {
-		t.Errorf("Result %s is wrong", results[0])
-	}
-	if results[1] != path.Join(sp[0], files[1]) {
-		t.Errorf("Result %s is wrong", results[1])
-	}
-	if results[2] != files[2] {
-		t.Errorf("Result %s is wrong", results[2])
-	}	
+	ExpectEqStr(t, results[0], path.Join(sp[0], files[0]))
+	ExpectEqStr(t, results[1], path.Join(sp[0], files[1]))
+	ExpectEqStr(t, results[2], files[2])
+}
+
+func TestOneSearchPath(t *testing.T) {
+	sp := []string{TestX8632BaseDir()}
+	CheckMultiSearchPaths(t, sp)
 }
 
 func TestTwoSearchPathsA(t *testing.T) {
@@ -56,22 +46,23 @@ func TestTwoSearchPathsB(t *testing.T) {
 }
 
 func TestThreeSearchPaths(t *testing.T) {
-	sp := []string{TestARMBaseDir(), TestX8632BaseDir(), TestX8664BaseDir()}
+	sp := []string{TestARMBaseDir(), TestX8632BaseDir(),
+		TestX8664BaseDir()}
 	CheckMultiSearchPaths(t, sp)
 }
 
 func TestNoShadowPaths(t *testing.T) {
 	sp := []string{TestARMBaseDir(), TestLibDir()}
-	files := []string{"libcrt_platform.a", "lib_x8632_foo.a",
+	files := []string{"libcrt_platform.a", "libfoo_in_libdir.a",
 		path.Join(sp[0], "libpnacl_irt_shim.a")}
 	results := DetermineFilepaths(files, sp)
-	if results[0] != path.Join(sp[0], files[0]) {
-		t.Errorf("Result %s is wrong", results[0])
-	}
-	if results[1] != path.Join(sp[1], files[1]) {
-		t.Errorf("Result %s is wrong", results[1])
-	}
-	if results[2] != files[2] {
-		t.Errorf("Result %s is wrong", results[2])
-	}
+	ExpectEqStr(t, results[0], path.Join(sp[0], files[0]))
+	ExpectEqStr(t, results[1], path.Join(sp[1], files[1]))
+	ExpectEqStr(t, results[2], files[2])
+
+	sp = []string{TestLibDir(), TestARMBaseDir()}
+	results = DetermineFilepaths(files, sp)
+	ExpectEqStr(t, results[0], path.Join(sp[1], files[0]))
+	ExpectEqStr(t, results[1], path.Join(sp[0], files[1]))
+	ExpectEqStr(t, results[2], files[2])
 }
