@@ -28,7 +28,7 @@ func TestELFARFileStructure(t *testing.T) {
 	ExpectEq(t, len(expected_subfiles), len(ar_file))
 	// Check that the contents are really ELF.
 	for fname, hdr_contents := range ar_file {
-		ExpectEq(t, string(hdr_contents.Contents[0:4]), ELF_MAGIC)
+		ExpectEq(t, string(hdr_contents.Contents[0:len(ELF_MAGIC)]), ELF_MAGIC)
 		ExpectEq(t, expected_subfiles[fname], true)
 	}
 }
