@@ -10,12 +10,6 @@ import (
 	"testing"
 )
 
-func ExpectEqStr(t *testing.T, s1 string, s2 string) {
-	if s1 != s2 {
-		t.Errorf("Expected %s == %s", s1, s2)
-	}
-}
-
 func TestNoPathsNoDirs(t *testing.T) {
 	DetermineFilepaths([]string{}, []string{})
 }
@@ -25,9 +19,9 @@ func CheckMultiSearchPaths(t *testing.T, sp []string) {
 		// Also add a fully-qualified library path.
 		path.Join(sp[len(sp) - 1], "libpnacl_irt_shim.a")}
 	results := DetermineFilepaths(files, sp)
-	ExpectEqStr(t, results[0], path.Join(sp[0], files[0]))
-	ExpectEqStr(t, results[1], path.Join(sp[0], files[1]))
-	ExpectEqStr(t, results[2], files[2])
+	ExpectEq(t, results[0], path.Join(sp[0], files[0]))
+	ExpectEq(t, results[1], path.Join(sp[0], files[1]))
+	ExpectEq(t, results[2], files[2])
 }
 
 func TestOneSearchPath(t *testing.T) {
@@ -56,13 +50,13 @@ func TestNoShadowPaths(t *testing.T) {
 	files := []string{"libcrt_platform.a", "libfoo_in_libdir.a",
 		path.Join(sp[0], "libpnacl_irt_shim.a")}
 	results := DetermineFilepaths(files, sp)
-	ExpectEqStr(t, results[0], path.Join(sp[0], files[0]))
-	ExpectEqStr(t, results[1], path.Join(sp[1], files[1]))
-	ExpectEqStr(t, results[2], files[2])
+	ExpectEq(t, results[0], path.Join(sp[0], files[0]))
+	ExpectEq(t, results[1], path.Join(sp[1], files[1]))
+	ExpectEq(t, results[2], files[2])
 
 	sp = []string{TestLibDir(), TestARMBaseDir()}
 	results = DetermineFilepaths(files, sp)
-	ExpectEqStr(t, results[0], path.Join(sp[1], files[0]))
-	ExpectEqStr(t, results[1], path.Join(sp[0], files[1]))
-	ExpectEqStr(t, results[2], files[2])
+	ExpectEq(t, results[0], path.Join(sp[1], files[0]))
+	ExpectEq(t, results[1], path.Join(sp[0], files[1]))
+	ExpectEq(t, results[2], files[2])
 }

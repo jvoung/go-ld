@@ -20,10 +20,7 @@ func TestARFileStructure(t *testing.T) {
 	}
 	defer f.Close()
 	ar_file := ReadPlainARFile(f)
-	if len(ar_file) != 3 {
-		t.Errorf("Expected 3 files (%s) in test AR file %s, got %d",
-			test_name, expected_subfiles, len(ar_file))
-	}
+	ExpectEq(t, len(expected_subfiles), len(ar_file))
 	// TODO(jvoung): Check more...
 }
 

@@ -24,9 +24,7 @@ func CheckFiles(t *testing.T, fnames []string, expected FileType) {
 	
 	file_map := ValidateFiles(fhandles)
 	for fname, typ := range file_map {
-		if typ != expected {
-			t.Errorf("%s should be %v, but is %v", fname, expected, typ)
-		}
+		ExpectEqM(t, expected, typ, fname + "should be")
 	}
 }
 
@@ -63,8 +61,6 @@ func TestELFFile(t *testing.T) {
 }
 
 func TestThinARFile(t *testing.T) {
-	fnames := []string{
-		path.Join(TestX8632BaseDir(), "libthin_all.a")}
-
+	fnames := []string{path.Join(TestX8632BaseDir(), "libthin_all.a")}
 	CheckFiles(t, fnames, THIN_AR_FILE)
 }
