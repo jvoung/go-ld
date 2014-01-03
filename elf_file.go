@@ -212,7 +212,7 @@ func readPhdr64(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 // Read in the program headers of the program.
 func ReadProgramHeaders(
 	buf []byte, fhdr *ElfFileHeader) []ProgramHeader {
-    phdrs := make([]ProgramHeader, fhdr.Phnum)
+    phdrs := make([]ProgramHeader, 0, fhdr.Phnum)
     byte_order := toByteOrder(fhdr.Data)
 	var reader_func func([]byte, binary.ByteOrder) ProgramHeader
 	if fhdr.Class == elf.ELFCLASS32 {
@@ -230,6 +230,7 @@ func ReadProgramHeaders(
 		new_phdr := reader_func(
 			buf[offset : offset + uint64(fhdr.Phentsize)], byte_order)
 		phdrs = append(phdrs, new_phdr)
+		offset += uint64(fhdr.Phentsize)
 	}
 	return phdrs
 }
@@ -294,13 +295,15 @@ func readShdr64(buf []byte, byte_order binary.ByteOrder) SectionHeader {
 	if err1 != nil || err2 != nil {
 		panic("Failed to read shdr name-index, or type")
 	}
-	err1 = binary.Read(byte_reader, byte_order, &shdr.Sh_flags)
+	var flags uint64
+	err1 = binary.Read(byte_reader, byte_order, &flags)
 	err2 = binary.Read(byte_reader, byte_order, &shdr.Sh_addr)
 	err3 := binary.Read(byte_reader, byte_order, &shdr.Sh_offset)
 	err4 := binary.Read(byte_reader, byte_order, &shdr.Sh_size)
 	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
 		panic("Failed to read shdr flags, addr, offset, or size")
 	}
+	shdr.Sh_flags = elf.SectionFlag(flags)
 	err1 = binary.Read(byte_reader, byte_order, &shdr.Sh_link)
 	err2 = binary.Read(byte_reader, byte_order, &shdr.Sh_info)
 	err3 = binary.Read(byte_reader, byte_order, &shdr.Sh_addralign)
@@ -312,7 +315,7 @@ func readShdr64(buf []byte, byte_order binary.ByteOrder) SectionHeader {
 }
 
 func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
-    shdrs := make([]SectionHeader, fhdr.Shnum)
+    shdrs := make([]SectionHeader, 0, fhdr.Shnum)
     byte_order := toByteOrder(fhdr.Data)
 	var reader_func func([]byte, binary.ByteOrder) SectionHeader
 	if fhdr.Class == elf.ELFCLASS32 {
@@ -330,19 +333,20 @@ func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
 		new_shdr := reader_func(
 			buf[offset : offset + uint64(fhdr.Shentsize)], byte_order)
 		shdrs = append(shdrs, new_shdr)
+		offset += uint64(fhdr.Shentsize)
 	}
 	// Also read the section header string table and fill out
 	// the section names.
 	sh_strtab_hdr := shdrs[fhdr.Shstrndx]
 	sh_strtab := buf[
 		sh_strtab_hdr.Sh_offset:sh_strtab_hdr.Sh_offset+sh_strtab_hdr.Sh_size]
-	for _, shdr := range shdrs {
-		name_start := shdr.Sh_name_index
+	for i := range shdrs {
+		name_start := shdrs[i].Sh_name_index
 		if name_start == 0 {
 			continue
 		}
-		name_end := bytes.IndexByte(sh_strtab[name_start:], 0)
-		shdr.Sh_name = string(sh_strtab[name_start:name_end])
+		name_end := uint32(bytes.IndexByte(sh_strtab[name_start:], 0))
+		shdrs[i].Sh_name = string(sh_strtab[name_start:name_start + name_end])
 	}
 	return shdrs
 }
