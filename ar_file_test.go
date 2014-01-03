@@ -1,7 +1,7 @@
 // Copyright (c) 2013, Jan Voung
 // All rights reserved.
 
-// Representation of AR files.
+// Test AR file utilities.
 
 package main
 
