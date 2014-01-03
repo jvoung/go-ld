@@ -8,6 +8,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
@@ -40,6 +41,20 @@ func main() {
 	fmt.Println("File types: ", file_map)
 
 	// Map the files -> symbol tables.
+	for fname, ftyp := range file_map {
+		fhandle := fhandles[fname]
+		switch ftyp {
+		case ELF_FILE:
+			body, err := ioutil.ReadAll(fhandle)
+			if err != nil {
+				panic("Failed to read in file")
+			}
+			ElfFileHeader := ReadElfHeader(body)
+			fmt.Println("Read an ELF file", ElfFileHeader.String())
+		default:
+			continue
+		}
+	}
 
 	// Resolve symbols to determine which files to pull in.
 
