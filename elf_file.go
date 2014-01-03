@@ -160,10 +160,14 @@ type ProgramHeader struct {
 func readPhdr32(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 	byte_reader := bytes.NewReader(buf)
     phdr := ProgramHeader{}
-	err1 := binary.Read(byte_reader, byte_order, &phdr.P_type)
+	// binary.Read doesn't like elf.ProgType == int, so read that
+	// to a local instead.
+	var typ uint32
+	err1 := binary.Read(byte_reader, byte_order, &typ)
 	if err1 != nil {
-		panic("Failed to read phdr type")
+		panic("Failed to read phdr type" + err1.Error())
 	}
+	phdr.P_type = elf.ProgType(typ)
 	var offset, vaddr, paddr, filesz, memsz, flags, align uint32
 	err1 = binary.Read(byte_reader, byte_order, &offset)
 	err2 := binary.Read(byte_reader, byte_order, &vaddr)
@@ -190,15 +194,17 @@ func readPhdr32(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 }
 
 func readPhdr64(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
-		byte_reader := bytes.NewReader(buf)
-    phdr := ProgramHeader{}
-	err1 := binary.Read(byte_reader, byte_order, &phdr.P_type)
+	byte_reader := bytes.NewReader(buf)
+	phdr := ProgramHeader{}
+	var typ uint32
+	err1 := binary.Read(byte_reader, byte_order, &typ)
 	err2 := binary.Read(byte_reader, byte_order, &phdr.P_flags)
 	err3 := binary.Read(byte_reader, byte_order, &phdr.P_offset)
 	err4 := binary.Read(byte_reader, byte_order, &phdr.P_vaddr)
 	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
 		panic("Failed to read phdr type, flags, offset, or vaddr")
 	}
+	phdr.P_type = elf.ProgType(typ)
 	err1 = binary.Read(byte_reader, byte_order, &phdr.P_paddr)
 	err2 = binary.Read(byte_reader, byte_order, &phdr.P_filesz)
 	err3 = binary.Read(byte_reader, byte_order, &phdr.P_memsz)

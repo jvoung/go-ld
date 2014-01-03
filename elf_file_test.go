@@ -7,8 +7,12 @@ package main
 
 import (
 	"debug/elf"
+	"fmt"
+	"os"
+	"os/exec"
 	"path"
 	"testing"
+	"time"
 )
 
 func TestRelocatableELFX8632(t *testing.T) {
@@ -21,7 +25,7 @@ func TestRelocatableELFX8632(t *testing.T) {
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
 	// Currently still built with the NaCl OSABI...
 	// Will eventually switch to NONE.
-	ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_REL, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_386, elf_file.Header.Machine)
@@ -130,7 +134,7 @@ func TestRelocatableELFX8664(t *testing.T) {
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
 	// Currently still built with the NaCl OSABI...
 	// Will eventually switch to NONE.
-	ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_REL, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_X86_64, elf_file.Header.Machine)
@@ -238,7 +242,7 @@ func TestRelocatableELFARM(t *testing.T) {
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
 	// Currently still built with the NaCl OSABI...
 	// Will eventually switch to NONE.
-	ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_REL, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_ARM, elf_file.Header.Machine)
@@ -339,12 +343,184 @@ func TestRelocatableELFARM(t *testing.T) {
 		elf_file.Shdrs[11])
 }
 
-// Check a particular executable ELF file for a particular architecture
-// and ELF class.
-func CheckExecutableELF(t *testing.T) {
+func checkExecutableX8632NaCl(t *testing.T, fname string) {
+	elf_file := ReadElfFileFname(fname)
+	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
+	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
+	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
+	// Currently still built with the NaCl OSABI...
+	// Will eventually switch to NONE.
+	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
+	ExpectEq(t, elf.ET_EXEC, elf_file.Header.Type)
+	ExpectEq(t, elf.EM_386, elf_file.Header.Machine)
+	ExpectEq(t, 6, len(elf_file.Phdrs))
 
+	// Check Phdrs
+	ExpectEq(t, elf_file.Phdrs[0].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[0].P_flags, elf.PF_R | elf.PF_X)
+	ExpectEq(t, elf_file.Phdrs[0].P_offset, uint64(0x10000))
+	ExpectEq(t, elf_file.Phdrs[0].P_vaddr, uint64(0x20000))
+	ExpectEq(t, elf_file.Phdrs[0].P_paddr, uint64(0x20000))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
+
+	ExpectEq(t, elf_file.Phdrs[1].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[1].P_flags, elf.PF_R)
+	ExpectEq(t, elf_file.Phdrs[1].P_offset, uint64(0))
+	ExpectEq(t, elf_file.Phdrs[1].P_vaddr, uint64(0x10020000))
+	ExpectEq(t, elf_file.Phdrs[1].P_paddr, uint64(0x10020000))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[1].P_align, uint64(0x10000))
+
+	ExpectEq(t, elf_file.Phdrs[2].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
+	// relative to the size of the previous segment.
+	ExpectEq(t, elf_file.Phdrs[2].P_offset,
+		elf_file.Phdrs[1].P_filesz)
+	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
+		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
+		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
 }
 
-func TestExecutableELF(t *testing.T) {
+func checkExecutableX8664NaCl(t *testing.T, fname string) {
+	elf_file := ReadElfFileFname(fname)
+	ExpectEq(t, elf.ELFCLASS64, elf_file.Header.Class)
+	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
+	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
+	// Currently still built with the NaCl OSABI...
+	// Will eventually switch to NONE.
+	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
+	ExpectEq(t, elf.ET_EXEC, elf_file.Header.Type)
+	ExpectEq(t, elf.EM_X86_64, elf_file.Header.Machine)
+	ExpectEq(t, 6, len(elf_file.Phdrs))
 
+	// Check Phdrs
+	ExpectEq(t, elf_file.Phdrs[0].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[0].P_flags, elf.PF_R | elf.PF_X)
+	ExpectEq(t, elf_file.Phdrs[0].P_offset, uint64(0x10000))
+	ExpectEq(t, elf_file.Phdrs[0].P_vaddr, uint64(0x20000))
+	ExpectEq(t, elf_file.Phdrs[0].P_paddr, uint64(0x20000))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
+
+	ExpectEq(t, elf_file.Phdrs[1].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[1].P_flags, elf.PF_R)
+	ExpectEq(t, elf_file.Phdrs[1].P_offset, uint64(0))
+	ExpectEq(t, elf_file.Phdrs[1].P_vaddr, uint64(0x10020000))
+	ExpectEq(t, elf_file.Phdrs[1].P_paddr, uint64(0x10020000))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[1].P_align, uint64(0x10000))
+
+	ExpectEq(t, elf_file.Phdrs[2].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
+	// relative to the size of the previous segment.
+	ExpectEq(t, elf_file.Phdrs[2].P_offset,
+		elf_file.Phdrs[1].P_filesz)
+	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
+		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
+		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
+}
+
+func checkExecutableARMNaCl(t *testing.T, fname string) {
+	elf_file := ReadElfFileFname(fname)
+	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
+	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
+	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
+	// Currently still built with the NaCl OSABI...
+	// Will eventually switch to NONE.
+	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
+	ExpectEq(t, elf.ET_EXEC, elf_file.Header.Type)
+	ExpectEq(t, elf.EM_ARM, elf_file.Header.Machine)
+	// The ARM one doesn't have a GNU_STACK segment so it's only 5 segments.
+	ExpectEq(t, 5, len(elf_file.Phdrs))
+
+	// Check Phdrs
+	ExpectEq(t, elf_file.Phdrs[0].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[0].P_flags, elf.PF_R | elf.PF_X)
+	ExpectEq(t, elf_file.Phdrs[0].P_offset, uint64(0x10000))
+	ExpectEq(t, elf_file.Phdrs[0].P_vaddr, uint64(0x20000))
+	ExpectEq(t, elf_file.Phdrs[0].P_paddr, uint64(0x20000))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
+
+	ExpectEq(t, elf_file.Phdrs[1].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[1].P_flags, elf.PF_R)
+	ExpectEq(t, elf_file.Phdrs[1].P_offset, uint64(0))
+	ExpectEq(t, elf_file.Phdrs[1].P_vaddr, uint64(0x10020000))
+	ExpectEq(t, elf_file.Phdrs[1].P_paddr, uint64(0x10020000))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[1].P_align, uint64(0x10000))
+
+	ExpectEq(t, elf_file.Phdrs[2].P_type, elf.PT_LOAD)
+	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
+	// relative to the size of the previous segment.
+	ExpectEq(t, elf_file.Phdrs[2].P_offset,
+		elf_file.Phdrs[1].P_filesz)
+	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
+		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
+		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+	// Skip the sizes, because they can change.
+	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
+}
+
+func lastModTime(files []string) time.Time {
+	t := time.Time{}
+	for _, fname := range files {
+		stat, err := os.Stat(fname)
+		if err != nil {
+			panic("Failed to stat: " + fname)
+		}
+		if stat.ModTime().After(t) {
+			t = stat.ModTime()
+		}
+	}
+	return t
+}
+
+func NaClTestDataOld(infiles, outfiles []string) bool {
+	max_in_mod := lastModTime(infiles)
+	max_out_mod := lastModTime(outfiles)
+	return max_in_mod.After(max_out_mod)
+}
+
+func TestNaClExecutable(t *testing.T) {
+	// Use the test_binary shell script to generate a NaCl .nexe
+	// then read it.
+	infiles := []string{path.Join(TestBaseDir, "test_relocs.sh"),
+		path.Join(TestBaseDir, "test_relocs.c")}
+	outdirs := []string{TestX8632BaseDir(), TestX8664BaseDir(),
+		TestARMBaseDir()}
+	outfiles := []string{"test_relocs.o",
+		"test_relocs.nexe",
+		"test_relocs.nexe---test_relocs.final.pexe---.o"}
+	joined_of := []string{}
+	for _, od := range outdirs {
+		for _, of := range outfiles {
+			joined_of = append(joined_of, path.Join(od, of))
+		}
+	}
+	if NaClTestDataOld(infiles, joined_of) {
+		fmt.Println("Need to regenerate relocs test binaries: test_relocs.sh")
+		cmd := exec.Command(path.Join(TestBaseDir, "test_relocs.sh"))
+		err := cmd.Run()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	checkExecutableX8632NaCl(
+		t, path.Join(TestX8632BaseDir(), "test_relocs.nexe"))
+	checkExecutableX8664NaCl(
+		t, path.Join(TestX8664BaseDir(), "test_relocs.nexe"))
+	checkExecutableARMNaCl(
+		t, path.Join(TestARMBaseDir(), "test_relocs.nexe"))
 }
