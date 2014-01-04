@@ -8,8 +8,8 @@ package main
 
 import (
 	"bytes"
-	"encoding/binary"
 	"debug/elf"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -66,7 +66,7 @@ func (h *ElfFileHeader) String() string {
         h.Shentsize, h.Shnum, h.Shstrndx)
 }
 
-func toByteOrder(d elf.Data) binary.ByteOrder {
+func ToByteOrder(d elf.Data) binary.ByteOrder {
     var b binary.ByteOrder
     if d == elf.ELFDATA2LSB {
         b = binary.LittleEndian
@@ -112,7 +112,7 @@ func ReadElfHeader(buf []byte) ElfFileHeader {
 	ei_ver := elf.Version(buf[6])
 	osabi := elf.OSABI(buf[7])
 	abi_ver := uint8(buf[8])
-	byte_order := toByteOrder(data)
+	byte_order := ToByteOrder(data)
 	// Initialize part of the struct for now (the non-byte-order dependent bits)
 	header := ElfFileHeader{
 		Class: class,
@@ -219,7 +219,7 @@ func readPhdr64(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 func ReadProgramHeaders(
 	buf []byte, fhdr *ElfFileHeader) []ProgramHeader {
     phdrs := make([]ProgramHeader, 0, fhdr.Phnum)
-    byte_order := toByteOrder(fhdr.Data)
+    byte_order := ToByteOrder(fhdr.Data)
 	var reader_func func([]byte, binary.ByteOrder) ProgramHeader
 	if fhdr.Class == elf.ELFCLASS32 {
 		reader_func = readPhdr32
@@ -320,9 +320,17 @@ func readShdr64(buf []byte, byte_order binary.ByteOrder) SectionHeader {
 	return shdr
 }
 
+func StringFromStrtab(strtab []byte, index uint32) string {
+	if index == 0 {
+		return ""
+	}
+	name_end := uint32(bytes.IndexByte(strtab[index:], 0))
+	return string(strtab[index:index + name_end])
+}
+
 func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
     shdrs := make([]SectionHeader, 0, fhdr.Shnum)
-    byte_order := toByteOrder(fhdr.Data)
+    byte_order := ToByteOrder(fhdr.Data)
 	var reader_func func([]byte, binary.ByteOrder) SectionHeader
 	if fhdr.Class == elf.ELFCLASS32 {
 		reader_func = readShdr32
@@ -347,28 +355,23 @@ func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
 	sh_strtab := buf[
 		sh_strtab_hdr.Sh_offset:sh_strtab_hdr.Sh_offset+sh_strtab_hdr.Sh_size]
 	for i := range shdrs {
-		name_start := shdrs[i].Sh_name_index
-		if name_start == 0 {
-			continue
-		}
-		name_end := uint32(bytes.IndexByte(sh_strtab[name_start:], 0))
-		shdrs[i].Sh_name = string(sh_strtab[name_start:name_start + name_end])
+		shdrs[i].Sh_name = StringFromStrtab(sh_strtab, shdrs[i].Sh_name_index)
 	}
 	return shdrs
 }
 
-type SymbolTable struct {
-	// TODO(jvoung): fill this...
-}
-
 type ElfFile struct {
+	Body []byte
 	Header ElfFileHeader
 	Phdrs []ProgramHeader
 	Shdrs []SectionHeader
 }
 
+// Parse the main headers of the ELF file, and return it.
+// Given these headers we can then start search for the symbol table,
+// and other sections like relocations.
 func ReadElfFile(buf []byte) ElfFile {
-	result := ElfFile{}
+	result := ElfFile{Body: buf}
 	result.Header = ReadElfHeader(buf)
 	result.Phdrs = ReadProgramHeaders(buf, &result.Header)
 	result.Shdrs = ReadSectionHeaders(buf, &result.Header)
@@ -410,4 +413,9 @@ type Elf64Rela struct {
 	R_off uint64
 	R_info uint32
 	R_addend int64
+}
+
+// Reads 32-bit .rel from a given section index.
+func ReadRelocations32(f *ElfFile, shndx int) []Elf32Rel {
+	return []Elf32Rel{}
 }

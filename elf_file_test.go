@@ -123,6 +123,11 @@ func TestRelocatableELFX8632(t *testing.T) {
 			Sh_addr: 0, Sh_offset: 0x4c4, Sh_size: 0x136,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[11])
+
+	// Try reading the symbol table too.
+	st := ReadSymbols(&elf_file)
+	ExpectEq(t, 10, len(st))
+	// Check it more deeply...
 }
 
 func TestRelocatableELFX8664(t *testing.T) {
@@ -232,6 +237,8 @@ func TestRelocatableELFX8664(t *testing.T) {
 			Sh_addr: 0, Sh_offset: 0x6f8, Sh_size: 0x136,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[11])
+	st := ReadSymbols(&elf_file)
+	ExpectEq(t, 10, len(st))
 }
 
 func TestRelocatableELFARM(t *testing.T) {
@@ -341,6 +348,10 @@ func TestRelocatableELFARM(t *testing.T) {
 			Sh_addr: 0, Sh_offset: 0x4fc, Sh_size: 0x13f,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[11])
+
+	st := ReadSymbols(&elf_file)
+	ExpectEq(t, 13, len(st))
+	// TODO(jvoung): check more...
 }
 
 func checkExecutableX8632NaCl(t *testing.T, fname string) {
