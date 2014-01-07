@@ -18,7 +18,9 @@ type SymbolTableEntry struct {
 	St_name string
 	St_info uint8
 	St_other uint8
-	St_shndx uint16
+	// read as a uint16
+	// TODO(jvoung): handle files w/ many sections
+	St_shndx elf.SectionIndex
 	St_value uint64 // or uint32
 	St_size uint64 // or uint32
 }
@@ -33,12 +35,6 @@ func readSymbolEntryPrefix(r io.Reader, bo binary.ByteOrder) (
 		return st_entry, err1
 	} else if err1 != nil {
 		panic("Failed to read st_name")
-	}
-	err1 = binary.Read(r, bo, &st_entry.St_info)
-	err2 := binary.Read(r, bo, &st_entry.St_other)
-	err3 := binary.Read(r, bo, &st_entry.St_shndx)
-	if err1 != nil || err2 != nil || err3 != nil {
-		panic("Failed to read st_info, other, or shndx")
 	}
 	return st_entry, nil
 }
@@ -59,6 +55,14 @@ func readSymbolEntry32(r io.Reader, bo binary.ByteOrder, strtab []byte) (
 	}
 	st_entry.St_value = uint64(value)
 	st_entry.St_size = uint64(size)
+	var shndx uint16
+	err1 = binary.Read(r, bo, &st_entry.St_info)
+	err2 = binary.Read(r, bo, &st_entry.St_other)
+	err3 := binary.Read(r, bo, &shndx)
+	if err1 != nil || err2 != nil || err3 != nil {
+		panic("Failed to read st_info, other, or shndx")
+	}
+	st_entry.St_shndx = elf.SectionIndex(shndx)
 	st_entry.St_name = StringFromStrtab(strtab, st_entry.St_name_index)
 	return st_entry, nil
 }
@@ -71,8 +75,16 @@ func readSymbolEntry64(r io.Reader, bo binary.ByteOrder, strtab []byte) (
 	} else if err1 != nil {
 		panic("Failed to read symbol table prefix")
 	}
+	var shndx uint16
+	err1 = binary.Read(r, bo, &st_entry.St_info)
+	err2 := binary.Read(r, bo, &st_entry.St_other)
+	err3 := binary.Read(r, bo, &shndx)
+	if err1 != nil || err2 != nil || err3 != nil {
+		panic("Failed to read st_info, other, or shndx")
+	}
+	st_entry.St_shndx = elf.SectionIndex(shndx)
 	err1 = binary.Read(r, bo, &st_entry.St_value)
-	err2 := binary.Read(r, bo, &st_entry.St_size)
+	err2 = binary.Read(r, bo, &st_entry.St_size)
 	if err1 != nil || err2 != nil {
 		panic("Failed to read st_value, size")
 	}

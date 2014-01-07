@@ -61,3 +61,14 @@ var LibraryFiles lib_names
 func init() {
 	flag.Var(&LibraryFiles, "l", "Add a library as input")
 }
+
+// The entry point function.
+var EntryPointFunc string
+func init() {
+	const (
+		defaultEntry = "_start"
+		usage = "Set the entry point function name (default _start)"
+	)
+	flag.StringVar(&EntryPointFunc, "entry", defaultEntry, usage)
+	flag.StringVar(&EntryPointFunc, "e", defaultEntry, usage + " (shorthand)")
+}

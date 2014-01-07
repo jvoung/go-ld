@@ -15,6 +15,47 @@ import (
 	"time"
 )
 
+func findSectionIndex(name string, f *ElfFile) int {
+	for i := range f.Shdrs {
+		if f.Shdrs[i].Sh_name == name {
+			return i
+		}
+	}
+	panic("Cannot find section w/ name: " + name)
+}
+
+func checkSymtabCrtbegin(t *testing.T, f *ElfFile,
+	st SymbolTable, start_off int, start_size int) {
+	// crtbegin.o should have:
+	// *) U _pnacl_wrapper_start which does a few things and then calls _start
+	// *) U __pnacl_irt_init which sets up the __nacl_read_tp function using
+	//      the startup_info auxv.
+	// *) T __pnacl_start, the entry point for PNaCl programs.
+	sym, ok := st["_pnacl_wrapper_start"]
+	ExpectEq(t, true, ok)
+	ExpectEq(t, "_pnacl_wrapper_start", sym.St_name)
+	ExpectEq(t, uint8(0), sym.St_other)
+	ExpectEq(t, elf.SHN_UNDEF, sym.St_shndx)
+	ExpectEq(t, uint64(0), sym.St_value)
+
+	sym, ok = st["__pnacl_init_irt"]
+	ExpectEq(t, true, ok)
+	ExpectEq(t, "__pnacl_init_irt", sym.St_name)
+	ExpectEq(t, uint8(0), sym.St_other)
+	ExpectEq(t, elf.SHN_UNDEF, sym.St_shndx)
+	ExpectEq(t, uint64(0), sym.St_value)
+
+	text_index := findSectionIndex(".text", f)
+	sym, ok = st["__pnacl_start"]
+	ExpectEq(t, true, ok)
+	ExpectEq(t, "__pnacl_start", sym.St_name)
+	ExpectEq(t, uint8(0), sym.St_other)
+	ExpectEq(t, elf.SectionIndex(text_index), sym.St_shndx)
+	// Offset relative to the beginning of the file.
+	ExpectEq(t, uint64(start_off), sym.St_value)
+	ExpectEq(t, uint64(start_size), sym.St_size)
+}
+
 func TestRelocatableELFX8632(t *testing.T) {
 	// Just using crtbegin.o for now.
 	// Want to also test a .o coming from a .pexe.
@@ -127,7 +168,9 @@ func TestRelocatableELFX8632(t *testing.T) {
 	// Try reading the symbol table too.
 	st := ReadSymbols(&elf_file)
 	ExpectEq(t, 10, len(st))
-	// Check it more deeply...
+
+	// Check it more deeply.
+	checkSymtabCrtbegin(t, &elf_file, st, 0x40, 128)
 }
 
 func TestRelocatableELFX8664(t *testing.T) {
@@ -239,6 +282,9 @@ func TestRelocatableELFX8664(t *testing.T) {
 		elf_file.Shdrs[11])
 	st := ReadSymbols(&elf_file)
 	ExpectEq(t, 10, len(st))
+
+	// Check it more deeply.
+	checkSymtabCrtbegin(t, &elf_file, st, 0x80, 160)
 }
 
 func TestRelocatableELFARM(t *testing.T) {
@@ -351,7 +397,8 @@ func TestRelocatableELFARM(t *testing.T) {
 
 	st := ReadSymbols(&elf_file)
 	ExpectEq(t, 13, len(st))
-	// TODO(jvoung): check more...
+	// Check it more deeply.
+	checkSymtabCrtbegin(t, &elf_file, st, 0x40, 88)
 }
 
 func checkExecutableX8632NaCl(t *testing.T, fname string) {

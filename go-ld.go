@@ -14,8 +14,9 @@ import (
 
 func main() {
 	flag.Parse()
-	fmt.Printf("Writing to %s\n", Outfile)
-	fmt.Printf("Search Paths to %s\n", SearchPaths)
+	fmt.Printf("Writing to: %s\n", Outfile)
+	fmt.Printf("With entry point func: %s\n", EntryPointFunc)
+	fmt.Printf("Search Paths to: %s\n", SearchPaths)
 	inputs := flag.Args()
 
 	// Go through search-paths to figure out the actual filenames of libs too.
