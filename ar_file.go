@@ -33,10 +33,15 @@ func (h *ARFileHeader) String() string {
 type ARFileHeaderContents struct {
 	Header ARFileHeader
 	Contents []byte
-	// TODO(jvoung): Assuming the files are ELF, wrap the contents as ELF?
 }
 
 type ARFile map[string] ARFileHeaderContents
+
+// Specialized AR file holding only ELF files.
+type ARElfFile struct {
+	Header ARFileHeader
+	File ElfFile
+}
 
 func translateFilename(fname string, lf_file []byte) string {
 	if fname[0] == '/' {
@@ -124,4 +129,14 @@ func ReadARFile(f *os.File, typ FileType) ARFile {
 	default:
 		panic("Unknown AR file type: " + string(typ))
 	}
+}
+
+func WrapARElf(f *ARFile) map[string] ARElfFile {
+	result := make(map[string] ARElfFile, len(*f))
+	for fname, arsubfile := range(*f) {
+		result[fname] = ARElfFile{
+			Header: arsubfile.Header,
+			File: ReadElfFile(arsubfile.Contents)}
+	}
+	return result
 }

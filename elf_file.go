@@ -378,6 +378,14 @@ func ReadElfFile(buf []byte) ElfFile {
 	return result
 }
 
+func ReadElfFileFD(f io.Reader) ElfFile {
+	body, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic("Failed to read file: " + err.Error())
+	}
+	return ReadElfFile(body)
+}
+
 // For testing.
 func ReadElfFileFname(fname string) ElfFile {
 	f, err := os.Open(fname)
@@ -385,12 +393,7 @@ func ReadElfFileFname(fname string) ElfFile {
 		panic("Failed to open file: " + string(fname) +
 			" error: " + err.Error())
 	}
-	body, err := ioutil.ReadAll(f)
-	if err != nil {
-		panic("Failed to open file: " + string(fname) +
-			" error: " + err.Error())
-	}
-	return ReadElfFile(body)
+	return ReadElfFileFD(f)
 }
 
 type Elf32Rel struct {

@@ -434,8 +434,7 @@ func checkExecutableX8632NaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf_file.Phdrs[2].P_type, elf.PT_LOAD)
 	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
 	// relative to the size of the previous segment.
-	ExpectEq(t, elf_file.Phdrs[2].P_offset,
-		elf_file.Phdrs[1].P_filesz)
+	ExpectEq(t, elf_file.Phdrs[2].P_offset, elf_file.Phdrs[1].P_filesz)
 	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
 		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
 	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
