@@ -3,6 +3,9 @@
 
 // Commandline flags for go-ld driver.
 // This is a very simple linker and does not support many options.
+// TODO(jvoung): replace this. Package "flag" doesn't handle
+// positional arguments before the flags, and we need to know
+// the order in which the flags are given too...
 
 package main
 
