@@ -131,7 +131,7 @@ func ReadARFile(f *os.File, typ FileType) ARFile {
 	}
 }
 
-func WrapARElf(f *ARFile) map[string] ARElfFile {
+func (f *ARFile) WrapARElf() map[string] ARElfFile {
 	result := make(map[string] ARElfFile, len(*f))
 	for fname, arsubfile := range(*f) {
 		result[fname] = ARElfFile{

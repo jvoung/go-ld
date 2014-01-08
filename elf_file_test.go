@@ -166,7 +166,7 @@ func TestRelocatableELFX8632(t *testing.T) {
 		elf_file.Shdrs[11])
 
 	// Try reading the symbol table too.
-	st := ReadSymbols(&elf_file)
+	st := elf_file.ReadSymbols()
 	ExpectEq(t, 10, len(st))
 
 	// Check it more deeply.
@@ -280,7 +280,7 @@ func TestRelocatableELFX8664(t *testing.T) {
 			Sh_addr: 0, Sh_offset: 0x6f8, Sh_size: 0x136,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[11])
-	st := ReadSymbols(&elf_file)
+	st := elf_file.ReadSymbols()
 	ExpectEq(t, 10, len(st))
 
 	// Check it more deeply.
@@ -395,7 +395,7 @@ func TestRelocatableELFARM(t *testing.T) {
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[11])
 
-	st := ReadSymbols(&elf_file)
+	st := elf_file.ReadSymbols()
 	ExpectEq(t, 13, len(st))
 	// Check it more deeply.
 	checkSymtabCrtbegin(t, &elf_file, st, 0x40, 88)

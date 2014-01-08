@@ -94,7 +94,7 @@ func readSymbolEntry64(r io.Reader, bo binary.ByteOrder, strtab []byte) (
 
 // Reads all the symbol-table entries from the ElfFile,
 // and figures out all the actual symbol names from the string table.
-func ReadSymbols(f *ElfFile) SymbolTable {
+func (f ElfFile) ReadSymbols() SymbolTable {
 	result := make(map[string] SymbolTableEntry)
 	st_index := -1
 	for i := range f.Shdrs {

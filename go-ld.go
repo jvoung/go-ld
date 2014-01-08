@@ -23,12 +23,16 @@ func read_symbols_task(fname string, ftyp FileType,
 	switch ftyp {
 	case ELF_FILE:
 		elf_file := ReadElfFileFD(fhandle)
-		st := ReadSymbols(&elf_file)
+		st := elf_file.ReadSymbols()
 		done_ch <- read_symbols_result{fname, st}
 	case AR_FILE, THIN_AR_FILE:
 		ar_file := ReadARFile(fhandle, ftyp)
-		ar_elf := WrapARElf(&ar_file)
+		ar_elf := ar_file.WrapARElf()
 		ar_syms := make(map[string]SymbolTable, len(ar_elf))
+		for fname := range ar_elf {
+			st := ar_elf[fname].File.ReadSymbols()
+			ar_syms[fname] = st
+		}
 		done_ch <- read_symbols_result{fname, ar_syms}
 	default:
 		panic("Unknown file type")
