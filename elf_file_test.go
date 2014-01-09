@@ -401,6 +401,14 @@ func TestRelocatableELFARM(t *testing.T) {
 	checkSymtabCrtbegin(t, &elf_file, st, 0x40, 88)
 }
 
+func alignTo(addr uint64, alignment uint64) uint64 {
+	diff := alignment - (addr % alignment)
+	if diff != 0 {
+		return addr + diff
+	}
+	return addr
+}
+
 func checkExecutableX8632NaCl(t *testing.T, fname string) {
 	elf_file := ReadElfFileFname(fname)
 	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
@@ -434,11 +442,12 @@ func checkExecutableX8632NaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf_file.Phdrs[2].P_type, elf.PT_LOAD)
 	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
 	// relative to the size of the previous segment.
-	ExpectEq(t, elf_file.Phdrs[2].P_offset, elf_file.Phdrs[1].P_filesz)
+	ExpectEq(t, elf_file.Phdrs[2].P_offset,
+		alignTo(elf_file.Phdrs[1].P_filesz, 32))
 	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
-		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+		alignTo(uint64(0x10030000 + elf_file.Phdrs[1].P_filesz), 32))
 	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
-		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+		alignTo(uint64(0x10030000 + elf_file.Phdrs[1].P_filesz), 32))
 	// Skip the sizes, because they can change.
 	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
 }
@@ -477,11 +486,11 @@ func checkExecutableX8664NaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
 	// relative to the size of the previous segment.
 	ExpectEq(t, elf_file.Phdrs[2].P_offset,
-		elf_file.Phdrs[1].P_filesz)
+		alignTo(elf_file.Phdrs[1].P_filesz, 32))
 	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
-		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+		alignTo(uint64(0x10030000 + elf_file.Phdrs[1].P_filesz), 32))
 	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
-		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+		alignTo(uint64(0x10030000 + elf_file.Phdrs[1].P_filesz), 32))
 	// Skip the sizes, because they can change.
 	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
 }
@@ -530,13 +539,17 @@ func checkExecutableARMNaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
 }
 
-func lastModTime(files []string) time.Time {
+func lastModTime(files []string, can_skip bool) time.Time {
 	t := time.Time{}
 	for _, fname := range files {
 		stat, err := os.Stat(fname)
 		if err != nil {
-			panic("Failed to stat: " + fname)
-		}
+      if can_skip {
+        continue
+      } else {
+        panic("Failed to stat: " + fname)
+      }
+    }
 		if stat.ModTime().After(t) {
 			t = stat.ModTime()
 		}
@@ -544,9 +557,9 @@ func lastModTime(files []string) time.Time {
 	return t
 }
 
-func NaClTestDataOld(infiles, outfiles []string) bool {
-	max_in_mod := lastModTime(infiles)
-	max_out_mod := lastModTime(outfiles)
+func naclTestDataOld(infiles, outfiles []string) bool {
+	max_in_mod := lastModTime(infiles, false)
+	max_out_mod := lastModTime(outfiles, true)
 	return max_in_mod.After(max_out_mod)
 }
 
@@ -566,7 +579,7 @@ func TestNaClExecutable(t *testing.T) {
 			joined_of = append(joined_of, path.Join(od, of))
 		}
 	}
-	if NaClTestDataOld(infiles, joined_of) {
+	if naclTestDataOld(infiles, joined_of) {
 		fmt.Println("Need to regenerate relocs test binaries: test_relocs.sh")
 		cmd := exec.Command(path.Join(TestBaseDir, "test_relocs.sh"))
 		err := cmd.Run()
