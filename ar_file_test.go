@@ -17,8 +17,8 @@ func TestELFARFileStructure(t *testing.T) {
 	test_name := path.Join(TestX8632BaseDir(), "libcrt_platform.a")
 	expected_subfiles := map[string]bool{
 		"pnacl_irt.o": true,
-		"setjmp.o": true,
-		"string.o": true}
+		"setjmp.o":    true,
+		"string.o":    true}
 	f, err := os.Open(test_name)
 	if err != nil {
 		t.Fatal("Failed to open test AR file")
@@ -44,8 +44,8 @@ func TestLongFilenames(t *testing.T) {
 		"file_quick_brown_fox_jumped.txt",
 		"file with space in it.txt"}
 	expected_contents := map[string]string{
-		"file_11.txt": "0123456789\n",
-		"file_24.txt": "55555\n55555\n55555\n55555\n",
+		"file_11.txt":  "0123456789\n",
+		"file_24.txt":  "55555\n55555\n55555\n55555\n",
 		"file_nil.txt": "",
 		"file_quick_brown_fox_jumped.txt": "the quick brown fox " +
 			"jumps over the lazy dog\n",

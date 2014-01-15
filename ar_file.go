@@ -15,32 +15,32 @@ import (
 )
 
 type ARFileHeader struct {
-	Filename string // Offset 0, up to 16 chars for short names.
+	Filename  string // Offset 0, up to 16 chars for short names.
 	Timestamp string // Offset 16
-	OwnerID string // Offset 28
-	GroupID string // Offset 34
-	FileMode string // Offset 40
-	FileSize uint32 // Offset 48
+	OwnerID   string // Offset 28
+	GroupID   string // Offset 34
+	FileMode  string // Offset 40
+	FileSize  uint32 // Offset 48
 }
 
 func (h *ARFileHeader) String() string {
-	return fmt.Sprintf("{Filename: %s\n Timestamp: %s\n OwnerID: %s\n " +
+	return fmt.Sprintf("{Filename: %s\n Timestamp: %s\n OwnerID: %s\n "+
 		"GroupID: %s\n FileMode: %s\n FileSize: %d}\n",
 		h.Filename, h.Timestamp, h.OwnerID, h.GroupID,
 		h.FileMode, h.FileSize)
 }
 
 type ARFileHeaderContents struct {
-	Header ARFileHeader
+	Header   ARFileHeader
 	Contents []byte
 }
 
-type ARFile map[string] ARFileHeaderContents
+type ARFile map[string]ARFileHeaderContents
 
 // Specialized AR file holding only ELF files.
 type ARElfFile struct {
 	Header ARFileHeader
-	File ElfFile
+	File   ElfFile
 }
 
 func translateFilename(fname string, lf_file []byte) string {
@@ -55,7 +55,7 @@ func translateFilename(fname string, lf_file []byte) string {
 			panic("Failed to parse long filename offset " + err.Error())
 		}
 		end := bytes.IndexByte(lf_file[offset:], '/')
-		return string(lf_file[offset : offset + end])
+		return string(lf_file[offset : offset+end])
 	} else {
 		end := strings.IndexByte(fname, '/')
 		return fname[:end]
@@ -63,7 +63,7 @@ func translateFilename(fname string, lf_file []byte) string {
 }
 
 func ReadPlainARFile(f *os.File) ARFile {
-	ar_file := make(map[string] ARFileHeaderContents)
+	ar_file := make(map[string]ARFileHeaderContents)
 	per_file_header_size := 60
 	hbuf := make([]byte, per_file_header_size)
 	// Assume magic number header is already read.
@@ -76,7 +76,7 @@ func ReadPlainARFile(f *os.File) ARFile {
 			break
 		}
 		if err != nil {
-			panic("Failed to read AR sub-file header: " + err.Error() + 
+			panic("Failed to read AR sub-file header: " + err.Error() +
 				" reading " + string(n))
 		}
 		// Okay, hbuf now has the header contents.
@@ -87,13 +87,13 @@ func ReadPlainARFile(f *os.File) ARFile {
 		}
 		filename := translateFilename(string(hbuf[0:16]),
 			special_long_filename_file)
-		new_header := ARFileHeader {
-			Filename: filename,
+		new_header := ARFileHeader{
+			Filename:  filename,
 			Timestamp: strings.TrimSpace(string(hbuf[16:28])),
-			OwnerID: strings.TrimSpace(string(hbuf[28:34])),
-			GroupID: strings.TrimSpace(string(hbuf[34:40])),
-			FileMode: strings.TrimSpace(string(hbuf[40:48])),
-			FileSize: uint32(fsize) }
+			OwnerID:   strings.TrimSpace(string(hbuf[28:34])),
+			GroupID:   strings.TrimSpace(string(hbuf[34:40])),
+			FileMode:  strings.TrimSpace(string(hbuf[40:48])),
+			FileSize:  uint32(fsize)}
 		body_buf := make([]byte, fsize)
 		_, err2 := f.ReadAt(body_buf, offset)
 		if err2 != nil {
@@ -113,7 +113,7 @@ func ReadPlainARFile(f *os.File) ARFile {
 		}
 		offset += int64(fsize)
 		// Data section should be aligned to 2 bytes.
-		if offset % 2 != 0 {
+		if offset%2 != 0 {
 			offset += 1
 		}
 	}
@@ -131,12 +131,12 @@ func ReadARFile(f *os.File, typ FileType) ARFile {
 	}
 }
 
-func (f *ARFile) WrapARElf() map[string] ARElfFile {
-	result := make(map[string] ARElfFile, len(*f))
-	for fname, arsubfile := range(*f) {
+func (f *ARFile) WrapARElf() map[string]ARElfFile {
+	result := make(map[string]ARElfFile, len(*f))
+	for fname, arsubfile := range *f {
 		result[fname] = ARElfFile{
 			Header: arsubfile.Header,
-			File: ReadElfFile(arsubfile.Contents)}
+			File:   ReadElfFile(arsubfile.Contents)}
 	}
 	return result
 }

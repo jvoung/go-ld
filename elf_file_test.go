@@ -542,12 +542,12 @@ func lastModTime(files []string, can_skip bool) time.Time {
 	for _, fname := range files {
 		stat, err := os.Stat(fname)
 		if err != nil {
-      if can_skip {
-        continue
-      } else {
-        panic("Failed to stat: " + fname)
-      }
-    }
+			if can_skip {
+				continue
+			} else {
+				panic("Failed to stat: " + fname)
+			}
+		}
 		if stat.ModTime().After(t) {
 			t = stat.ModTime()
 		}
