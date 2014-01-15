@@ -19,63 +19,63 @@ import (
 // Rounded-up ELF header (elf class 32 and 64 layout is the same order)
 type ElfFileHeader struct {
 	// Offset 0-3 is the ELF magic number.
-	Class elf.Class // Offset 4
-	Data elf.Data // Offset 5 (endianness, etc.)
+	Class      elf.Class   // Offset 4
+	Data       elf.Data    // Offset 5 (endianness, etc.)
 	EI_Version elf.Version // Offset 6
-	OSABI elf.OSABI // Offset 7
-	ABIVersion uint8 // Offset 8
+	OSABI      elf.OSABI   // Offset 7
+	ABIVersion uint8       // Offset 8
 	// Padding Offset 9-15
-	Type elf.Type // Offset 0x10
-	Machine elf.Machine // Offset 0x12
-	E_Version uint32 // Offset 0x14
-	Entry uint64 // Offset 0x18 (could have been uint32)
-	Phoff uint64 // (could have been uint32)
-	Shoff uint64 // (could have been uint32)
-	Flags uint32
+	Type           elf.Type    // Offset 0x10
+	Machine        elf.Machine // Offset 0x12
+	E_Version      uint32      // Offset 0x14
+	Entry          uint64      // Offset 0x18 (could have been uint32)
+	Phoff          uint64      // (could have been uint32)
+	Shoff          uint64      // (could have been uint32)
+	Flags          uint32
 	FileHeaderSize uint16
-	Phentsize uint16
-	Phnum uint16
-	Shentsize uint16
-	Shnum uint16
-	Shstrndx uint16
+	Phentsize      uint16
+	Phnum          uint16
+	Shentsize      uint16
+	Shnum          uint16
+	Shstrndx       uint16
 }
 
 func (h *ElfFileHeader) String() string {
-	return fmt.Sprintf("ELF Header:\n" +
-		"  Class: %s\n" +
-		"  Data: %s\n" +
-		"  Version: %s\n" +
-		"  OS/ABI: %s\n" +
-		"  ABI Version: %d\n" +
-		"  Type: %s\n" +
-		"  Machine: %s\n" +
-		"  Version: %d\n" +
-		"  Entry point address: 0x%x\n" +
-		"  Start of program headers: %d (bytes into file)\n" +
-		"  Start of section headers: %d (bytes into file)\n" +
-		"  Flags: 0x%x\n" +
-		"  Size of this header: %d\n" +
-		"  Size of program headers: %d\n" +
-		"  Number of program headers: %d\n" +
-		"  Size of section headers: %d\n" +
-		"  Number of section headers: %d\n" +
+	return fmt.Sprintf("ELF Header:\n"+
+		"  Class: %s\n"+
+		"  Data: %s\n"+
+		"  Version: %s\n"+
+		"  OS/ABI: %s\n"+
+		"  ABI Version: %d\n"+
+		"  Type: %s\n"+
+		"  Machine: %s\n"+
+		"  Version: %d\n"+
+		"  Entry point address: 0x%x\n"+
+		"  Start of program headers: %d (bytes into file)\n"+
+		"  Start of section headers: %d (bytes into file)\n"+
+		"  Flags: 0x%x\n"+
+		"  Size of this header: %d\n"+
+		"  Size of program headers: %d\n"+
+		"  Number of program headers: %d\n"+
+		"  Size of section headers: %d\n"+
+		"  Number of section headers: %d\n"+
 		"  Section header string table index: %d\n",
 		h.Class, h.Data, h.EI_Version, h.OSABI, h.ABIVersion, h.Type,
 		h.Machine, h.E_Version, h.Entry, h.Phoff, h.Shoff, h.Flags,
-        h.FileHeaderSize, h.Phentsize, h.Phnum,
-        h.Shentsize, h.Shnum, h.Shstrndx)
+		h.FileHeaderSize, h.Phentsize, h.Phnum,
+		h.Shentsize, h.Shnum, h.Shstrndx)
 }
 
 func ToByteOrder(d elf.Data) binary.ByteOrder {
-    var b binary.ByteOrder
-    if d == elf.ELFDATA2LSB {
-        b = binary.LittleEndian
-    } else if d == elf.ELFDATA2MSB {
-        b = binary.BigEndian
-    } else {
-        panic("Unknown byte order")
-    }
-    return b
+	var b binary.ByteOrder
+	if d == elf.ELFDATA2LSB {
+		b = binary.LittleEndian
+	} else if d == elf.ELFDATA2MSB {
+		b = binary.BigEndian
+	} else {
+		panic("Unknown byte order")
+	}
+	return b
 }
 
 // Read portion of the ELF file header that depends on the ELF class,
@@ -84,7 +84,8 @@ func ReadElfHeaderWithClass(
 	byte_reader io.Reader, class elf.Class, byte_order binary.ByteOrder) (
 	entry uint64, phoff uint64, shoff uint64) {
 	switch class {
-	default: panic("Unknown ELF class " + string(class))
+	default:
+		panic("Unknown ELF class " + string(class))
 	case elf.ELFCLASS32:
 		var e32, ph32, sh32 uint32
 		err1 := binary.Read(byte_reader, byte_order, &e32)
@@ -115,10 +116,10 @@ func ReadElfHeader(buf []byte) ElfFileHeader {
 	byte_order := ToByteOrder(data)
 	// Initialize part of the struct for now (the non-byte-order dependent bits)
 	header := ElfFileHeader{
-		Class: class,
-		Data: data,
+		Class:      class,
+		Data:       data,
 		EI_Version: ei_ver,
-		OSABI: osabi,
+		OSABI:      osabi,
 		ABIVersion: abi_ver}
 	byte_reader := bytes.NewReader(buf[16:])
 	err1 := binary.Read(byte_reader, byte_order, &header.Type)
@@ -135,7 +136,7 @@ func ReadElfHeader(buf []byte) ElfFileHeader {
 	if err1 != nil || err2 != nil || err3 != nil {
 		panic("Failed to read ELF machine")
 	}
-    err1 = binary.Read(byte_reader, byte_order, &header.Phnum)
+	err1 = binary.Read(byte_reader, byte_order, &header.Phnum)
 	err2 = binary.Read(byte_reader, byte_order, &header.Shentsize)
 	err3 = binary.Read(byte_reader, byte_order, &header.Shnum)
 	err4 := binary.Read(byte_reader, byte_order, &header.Shstrndx)
@@ -147,19 +148,19 @@ func ReadElfHeader(buf []byte) ElfFileHeader {
 
 // PHDRs (elf class 32 and 64 have slightly different layout...)
 type ProgramHeader struct {
-	P_type elf.ProgType
-	P_flags elf.ProgFlag // flags after memsz for elf-class 32
+	P_type   elf.ProgType
+	P_flags  elf.ProgFlag // flags after memsz for elf-class 32
 	P_offset uint64
-	P_vaddr uint64
-	P_paddr uint64
+	P_vaddr  uint64
+	P_paddr  uint64
 	P_filesz uint64
-	P_memsz uint64
-	P_align uint64
+	P_memsz  uint64
+	P_align  uint64
 }
 
 func readPhdr32(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 	byte_reader := bytes.NewReader(buf)
-    phdr := ProgramHeader{}
+	phdr := ProgramHeader{}
 	// binary.Read doesn't like elf.ProgType == int, so read that
 	// to a local instead.
 	var typ uint32
@@ -218,8 +219,8 @@ func readPhdr64(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 // Read in the program headers of the program.
 func ReadProgramHeaders(
 	buf []byte, fhdr *ElfFileHeader) []ProgramHeader {
-    phdrs := make([]ProgramHeader, 0, fhdr.Phnum)
-    byte_order := ToByteOrder(fhdr.Data)
+	phdrs := make([]ProgramHeader, 0, fhdr.Phnum)
+	byte_order := ToByteOrder(fhdr.Data)
 	var reader_func func([]byte, binary.ByteOrder) ProgramHeader
 	if fhdr.Class == elf.ELFCLASS32 {
 		reader_func = readPhdr32
@@ -232,9 +233,9 @@ func ReadProgramHeaders(
 	if offset == 0 {
 		return phdrs
 	}
-    for i := 0; i < int(fhdr.Phnum); i++ {
+	for i := 0; i < int(fhdr.Phnum); i++ {
 		new_phdr := reader_func(
-			buf[offset : offset + uint64(fhdr.Phentsize)], byte_order)
+			buf[offset:offset+uint64(fhdr.Phentsize)], byte_order)
 		phdrs = append(phdrs, new_phdr)
 		offset += uint64(fhdr.Phentsize)
 	}
@@ -244,16 +245,16 @@ func ReadProgramHeaders(
 // Rounded-up Section Headers (elf class 32 and 64 layout is the same order)
 type SectionHeader struct {
 	Sh_name_index uint32
-	Sh_name string
-	Sh_type elf.SectionType
-	Sh_flags elf.SectionFlag // 32 or 64
-	Sh_addr uint64 // or 32
-	Sh_offset uint64 // or 32
-	Sh_size uint64 // or 32
-	Sh_link uint32
-	Sh_info uint32
-	Sh_addralign uint64 // or 32
-	Sh_entsize uint64 // or 32
+	Sh_name       string
+	Sh_type       elf.SectionType
+	Sh_flags      elf.SectionFlag // 32 or 64
+	Sh_addr       uint64          // or 32
+	Sh_offset     uint64          // or 32
+	Sh_size       uint64          // or 32
+	Sh_link       uint32
+	Sh_info       uint32
+	Sh_addralign  uint64 // or 32
+	Sh_entsize    uint64 // or 32
 }
 
 // A string table is just an sequence null-terminated strings.
@@ -262,7 +263,7 @@ type StringTable []byte
 
 func readShdr32(buf []byte, byte_order binary.ByteOrder) SectionHeader {
 	byte_reader := bytes.NewReader(buf)
-    shdr := SectionHeader{}
+	shdr := SectionHeader{}
 	err1 := binary.Read(byte_reader, byte_order, &shdr.Sh_name_index)
 	err2 := binary.Read(byte_reader, byte_order, &shdr.Sh_type)
 	if err1 != nil || err2 != nil {
@@ -325,12 +326,12 @@ func StringFromStrtab(strtab []byte, index uint32) string {
 		return ""
 	}
 	name_end := uint32(bytes.IndexByte(strtab[index:], 0))
-	return string(strtab[index:index + name_end])
+	return string(strtab[index : index+name_end])
 }
 
 func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
-    shdrs := make([]SectionHeader, 0, fhdr.Shnum)
-    byte_order := ToByteOrder(fhdr.Data)
+	shdrs := make([]SectionHeader, 0, fhdr.Shnum)
+	byte_order := ToByteOrder(fhdr.Data)
 	var reader_func func([]byte, binary.ByteOrder) SectionHeader
 	if fhdr.Class == elf.ELFCLASS32 {
 		reader_func = readShdr32
@@ -343,17 +344,16 @@ func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
 	if offset == 0 {
 		return shdrs
 	}
-    for i := 0; i < int(fhdr.Shnum); i++ {
+	for i := 0; i < int(fhdr.Shnum); i++ {
 		new_shdr := reader_func(
-			buf[offset : offset + uint64(fhdr.Shentsize)], byte_order)
+			buf[offset:offset+uint64(fhdr.Shentsize)], byte_order)
 		shdrs = append(shdrs, new_shdr)
 		offset += uint64(fhdr.Shentsize)
 	}
 	// Also read the section header string table and fill out
 	// the section names.
 	sh_strtab_hdr := shdrs[fhdr.Shstrndx]
-	sh_strtab := buf[
-		sh_strtab_hdr.Sh_offset:sh_strtab_hdr.Sh_offset+sh_strtab_hdr.Sh_size]
+	sh_strtab := buf[sh_strtab_hdr.Sh_offset : sh_strtab_hdr.Sh_offset+sh_strtab_hdr.Sh_size]
 	for i := range shdrs {
 		shdrs[i].Sh_name = StringFromStrtab(sh_strtab, shdrs[i].Sh_name_index)
 	}
@@ -361,10 +361,10 @@ func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
 }
 
 type ElfFile struct {
-	Body []byte
+	Body   []byte
 	Header ElfFileHeader
-	Phdrs []ProgramHeader
-	Shdrs []SectionHeader
+	Phdrs  []ProgramHeader
+	Shdrs  []SectionHeader
 }
 
 // Parse the main headers of the ELF file, and return it.
@@ -397,24 +397,24 @@ func ReadElfFileFname(fname string) ElfFile {
 }
 
 type Elf32Rel struct {
-	R_off uint32
+	R_off  uint32
 	R_info uint32
 }
 
 type Elf32Rela struct {
-	R_off uint32
-	R_info uint32
+	R_off    uint32
+	R_info   uint32
 	R_addend int32
 }
 
 type Elf64Rel struct {
-	R_off uint64
+	R_off  uint64
 	R_info uint32
 }
 
 type Elf64Rela struct {
-	R_off uint64
-	R_info uint32
+	R_off    uint64
+	R_info   uint32
 	R_addend int64
 }
 
