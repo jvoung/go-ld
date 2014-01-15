@@ -402,11 +402,8 @@ func TestRelocatableELFARM(t *testing.T) {
 }
 
 func alignTo(addr uint64, alignment uint64) uint64 {
-	diff := alignment - (addr % alignment)
-	if diff != 0 {
-		return addr + diff
-	}
-	return addr
+	diff := (alignment - (addr % alignment)) % alignment
+	return addr + diff
 }
 
 func checkExecutableX8632NaCl(t *testing.T, fname string) {
@@ -529,12 +526,13 @@ func checkExecutableARMNaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf_file.Phdrs[2].P_type, elf.PT_LOAD)
 	ExpectEq(t, elf_file.Phdrs[2].P_flags, elf.PF_R | elf.PF_W)
 	// relative to the size of the previous segment.
+	// TODO(jvoung): what is the alignment requirement???
 	ExpectEq(t, elf_file.Phdrs[2].P_offset,
-		elf_file.Phdrs[1].P_filesz)
+		alignTo(elf_file.Phdrs[1].P_filesz, 8))
 	ExpectEq(t, elf_file.Phdrs[2].P_vaddr,
-		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+		alignTo(uint64(0x10030000 + elf_file.Phdrs[1].P_filesz), 8))
 	ExpectEq(t, elf_file.Phdrs[2].P_paddr,
-		uint64(0x10030000 + elf_file.Phdrs[1].P_filesz))
+		alignTo(uint64(0x10030000 + elf_file.Phdrs[1].P_filesz), 8))
 	// Skip the sizes, because they can change.
 	ExpectEq(t, elf_file.Phdrs[0].P_align, uint64(0x10000))
 }
