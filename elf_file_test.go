@@ -31,14 +31,16 @@ func checkSymtabCrtbegin(t *testing.T, f *ElfFile,
 	// *) U __pnacl_irt_init which sets up the __nacl_read_tp function using
 	//      the startup_info auxv.
 	// *) T __pnacl_start, the entry point for PNaCl programs.
-	sym, ok := st["_pnacl_wrapper_start"]
+	link_info := GetSymLinkInfo(st)
+	ht := SymLinkInfoToHash(link_info, st)
+	sym, ok := ht["_pnacl_wrapper_start"]
 	ExpectEq(t, true, ok)
 	ExpectEq(t, "_pnacl_wrapper_start", sym.St_name)
 	ExpectEq(t, uint8(0), sym.St_other)
 	ExpectEq(t, elf.SHN_UNDEF, sym.St_shndx)
 	ExpectEq(t, uint64(0), sym.St_value)
 
-	sym, ok = st["__pnacl_init_irt"]
+	sym, ok = ht["__pnacl_init_irt"]
 	ExpectEq(t, true, ok)
 	ExpectEq(t, "__pnacl_init_irt", sym.St_name)
 	ExpectEq(t, uint8(0), sym.St_other)
@@ -46,7 +48,7 @@ func checkSymtabCrtbegin(t *testing.T, f *ElfFile,
 	ExpectEq(t, uint64(0), sym.St_value)
 
 	text_index := findSectionIndex(".text", f)
-	sym, ok = st["__pnacl_start"]
+	sym, ok = ht["__pnacl_start"]
 	ExpectEq(t, true, ok)
 	ExpectEq(t, "__pnacl_start", sym.St_name)
 	ExpectEq(t, uint8(0), sym.St_other)

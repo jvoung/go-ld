@@ -25,7 +25,7 @@ type SymbolTableEntry struct {
 	St_size uint64 // or uint32
 }
 
-type SymbolTable map[string] SymbolTableEntry
+type SymbolTable []SymbolTableEntry
 
 func readSymbolEntryPrefix(r io.Reader, bo binary.ByteOrder) (
 	SymbolTableEntry, error) {
@@ -95,7 +95,6 @@ func readSymbolEntry64(r io.Reader, bo binary.ByteOrder, strtab []byte) (
 // Reads all the symbol-table entries from the ElfFile,
 // and figures out all the actual symbol names from the string table.
 func (f ElfFile) ReadSymbols() SymbolTable {
-	result := make(map[string] SymbolTableEntry)
 	st_index := -1
 	for i := range f.Shdrs {
 		if f.Shdrs[i].Sh_name == ".symtab" &&
@@ -117,13 +116,18 @@ func (f ElfFile) ReadSymbols() SymbolTable {
 	byte_order := ToByteOrder(f.Header.Data)
 	var reader_func func(io.Reader, binary.ByteOrder, []byte) (
 		SymbolTableEntry, error)
+	sizeof_struct := 0
 	if f.Header.Class == elf.ELFCLASS32 {
 		reader_func = readSymbolEntry32
+		sizeof_struct = 16
 	} else if f.Header.Class == elf.ELFCLASS64 {
 		reader_func = readSymbolEntry64
+		sizeof_struct = 24
 	} else {
 		panic("Unknown ELF class")
 	}
+	result := make([]SymbolTableEntry, 0,
+		symtab_sec_hdr.Sh_size / uint64(sizeof_struct))
 	for {
 		new_st_entry, err := reader_func(byte_reader, byte_order, strtab_slice)
 		if err == io.EOF {
@@ -133,7 +137,45 @@ func (f ElfFile) ReadSymbols() SymbolTable {
 			// Can we omit the nameless symbols for now?
 			continue
 		}
-		result[new_st_entry.St_name] = new_st_entry
+		// Uh... we need to be careful about local symbols w/ the same name
+		// (and local may have the same name as a global)!
+		result = append(result, new_st_entry)
+	}
+	return result
+}
+
+type SymLinkInfo struct {
+	// Index into symbol table for the symbol.
+	UndefinedSyms []int	
+	ExportedSyms []int
+}
+
+func GetSymBind(i uint8) elf.SymBind {
+	return elf.SymBind(i >> 4)
+}
+
+func GetSymLinkInfo(st SymbolTable) SymLinkInfo {
+	info := SymLinkInfo{}
+	for i, sym := range st {
+		if sym.St_shndx == elf.SHN_UNDEF {
+			info.UndefinedSyms = append(info.UndefinedSyms, i)
+		} else if GetSymBind(sym.St_info) == elf.STB_GLOBAL {
+			info.ExportedSyms = append(info.ExportedSyms, i)
+		}
+	}
+	return info
+}
+
+func SymLinkInfoToHash(link_info SymLinkInfo,
+	st SymbolTable) map[string] *SymbolTableEntry {
+	result := make(map[string] *SymbolTableEntry)
+	// UndefinedSyms and ExportedSyms should be unique and not have
+	// local symbols, so we can use a map[string] at this point.
+	for _, index := range link_info.UndefinedSyms {
+		result[st[index].St_name] = &st[index]
+	}
+	for _, index := range link_info.ExportedSyms {
+		result[st[index].St_name] = &st[index]
 	}
 	return result
 }
