@@ -1,0 +1,7 @@
+.text.foo1
+.text.foo2
+.text.foo3
+.text.foo4
+.text.foo5
+.text.foo6
+.text.main
