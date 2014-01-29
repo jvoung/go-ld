@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct fp {
+typedef struct fp_int {
   int (*foo)(int);
   int *p;
-} fp;
+} fp_int;
 
 int x = 99;
 int y = 0;
@@ -15,7 +15,7 @@ int Func2(int b) { if (b) return y; else return x; }
 int (*g_fp)(int) = &Func2;
 int* const g_p = &y;
 
-int __attribute__((noinline))Bar(fp* z, int p) {
+int __attribute__((noinline))Bar(fp_int* z, int p) {
   if (z->foo == &Func) {
     puts("Func!\n");
   } else {
@@ -27,7 +27,7 @@ int __attribute__((noinline))Bar(fp* z, int p) {
     return z->foo(p);
 }
 
-void __attribute__((noinline)) Baz(fp* z, int p) {
+void __attribute__((noinline)) Baz(fp_int* z, int p) {
   switch(p) {
     case 1: z->foo = &Func;  z->p = NULL; puts("Set Func!\n"); break;
     case 2: z->foo = &Func2; z->p = &x;   puts("Not Func!\n"); break;
@@ -37,7 +37,7 @@ void __attribute__((noinline)) Baz(fp* z, int p) {
   }
 }
 
-void __attribute__((noinline)) Baz2(fp* z, int p) {
+void __attribute__((noinline)) Baz2(fp_int* z, int p) {
   switch(p) {
     case 1: z->foo = &Func;  z->p = NULL; puts("Set Func!\n"); break;
     case 2: z->foo = &Func2; z->p = &x;   puts("Not Func!\n"); break;
@@ -49,9 +49,9 @@ void __attribute__((noinline)) Baz2(fp* z, int p) {
 
 int main(int argc, char* argv[]) {
   jmp_buf jb;
-  fp my_fp = { 0, 0 };
+  fp_int my_fp_int = { 0, 0 };
   setjmp(jb);
-  Baz(&my_fp, argc);
-  Baz2(&my_fp, argc);
-  return Func(argc) || Bar(&my_fp, (int)((argc + 10.0)/(M_PI)));
+  Baz(&my_fp_int, argc);
+  Baz2(&my_fp_int, argc);
+  return Func(argc) || Bar(&my_fp_int, (int)((argc + 10.0)/(M_PI)));
 }
