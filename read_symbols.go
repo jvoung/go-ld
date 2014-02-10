@@ -27,6 +27,14 @@ type SymbolTableEntry struct {
 
 type SymbolTable []SymbolTableEntry
 
+func St_bind(info uint8) elf.SymBind {
+	return elf.SymBind(info >> 4)
+}
+
+func St_type(info uint8) elf.SymType {
+	return elf.SymType(uint8(0xf) & info)
+}
+
 func readSymbolEntryPrefix(r io.Reader, bo binary.ByteOrder) (
 	SymbolTableEntry, error) {
 	st_entry := SymbolTableEntry{}
@@ -133,12 +141,6 @@ func (f ElfFile) ReadSymbols() SymbolTable {
 		if err == io.EOF {
 			break
 		}
-		if new_st_entry.St_name == "" {
-			// Can we omit the nameless symbols for now?
-			continue
-		}
-		// Uh... we need to be careful about local symbols w/ the same name
-		// (and local may have the same name as a global)!
 		result = append(result, new_st_entry)
 	}
 	return result

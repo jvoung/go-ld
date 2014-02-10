@@ -401,24 +401,65 @@ type Elf32Rel struct {
 	R_info uint32
 }
 
-type Elf32Rela struct {
-	R_off    uint32
-	R_info   uint32
-	R_addend int32
-}
-
-type Elf64Rel struct {
-	R_off  uint64
-	R_info uint32
-}
-
 type Elf64Rela struct {
 	R_off    uint64
-	R_info   uint32
+	R_info   uint64
 	R_addend int64
 }
 
 // Reads 32-bit .rel from a given section index.
-func ReadRelocations32(f *ElfFile, shndx int) []Elf32Rel {
-	return []Elf32Rel{}
+func (f *ElfFile) ReadRel32(shndx int) []Elf32Rel {
+	sec_hdr := f.Shdrs[shndx]
+	if sec_hdr.Sh_type != elf.SHT_REL {
+		panic("Relocation Section at index: " + string(shndx) +
+			" is not SHT_REL. It is " + string(sec_hdr.Sh_type))
+	}
+	results := []Elf32Rel{}
+	byte_order := ToByteOrder(f.Header.Data)
+	slice := f.Body[sec_hdr.Sh_offset : sec_hdr.Sh_offset +  sec_hdr.Sh_size]
+	byte_reader := bytes.NewReader(slice)
+	for i := uint64(0); i < sec_hdr.Sh_size ; i += 8 {
+		rel := Elf32Rel{}
+		binary.Read(byte_reader, byte_order, &rel.R_off)
+		binary.Read(byte_reader, byte_order, &rel.R_info)
+		results = append(results, rel)
+	}
+	return results
+}
+
+// Reads 64-bit .rela from a given section index.
+func (f *ElfFile) ReadRela64(shndx int) []Elf64Rela {
+	sec_hdr := f.Shdrs[shndx]
+	if sec_hdr.Sh_type != elf.SHT_RELA {
+		panic("Relocation Section at index: " + string(shndx) +
+			" is not SHT_RELA. It is " + string(sec_hdr.Sh_type))
+	}
+	results := []Elf64Rela{}
+	byte_order := ToByteOrder(f.Header.Data)
+	slice := f.Body[sec_hdr.Sh_offset : sec_hdr.Sh_offset +  sec_hdr.Sh_size]
+	byte_reader := bytes.NewReader(slice)
+	for i := uint64(0); i < sec_hdr.Sh_size ; i += 24 {
+		rel := Elf64Rela{}
+		binary.Read(byte_reader, byte_order, &rel.R_off)
+		binary.Read(byte_reader, byte_order, &rel.R_info)
+		binary.Read(byte_reader, byte_order, &rel.R_addend)
+		results = append(results, rel)
+	}
+	return results
+}
+
+func Elf32_r_sym(r_info uint32) uint32 {
+	return uint32(r_info >> 8)
+}
+
+func Elf32_r_type(r_info uint32) uint8 {
+	return uint8(r_info)
+}
+
+func Elf64_r_sym(r_info uint64) uint32 {
+	return uint32(r_info >> 32)
+}
+
+func Elf64_r_type(r_info uint64) uint32 {
+	return uint32(r_info)
 }
