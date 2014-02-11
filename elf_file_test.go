@@ -66,9 +66,7 @@ func TestRelocatableELFX8632(t *testing.T) {
 	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
 	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
-	// Currently still built with the NaCl OSABI...
-	// Will eventually switch to NONE.
-	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, elf.ELFOSABI_NONE, elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_REL, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_386, elf_file.Header.Machine)
@@ -191,9 +189,7 @@ func TestRelocatableELFX8664(t *testing.T) {
 	ExpectEq(t, elf.ELFCLASS64, elf_file.Header.Class)
 	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
-	// Currently still built with the NaCl OSABI...
-	// Will eventually switch to NONE.
-	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, elf.ELFOSABI_NONE, elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_REL, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_X86_64, elf_file.Header.Machine)
@@ -331,9 +327,7 @@ func TestRelocatableELFARM(t *testing.T) {
 	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
 	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
-	// Currently still built with the NaCl OSABI...
-	// Will eventually switch to NONE.
-	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, elf.ELFOSABI_NONE, elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_REL, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_ARM, elf_file.Header.Machine)
@@ -460,9 +454,7 @@ func checkExecutableX8632NaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
 	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
-	// Currently still built with the NaCl OSABI...
-	// Will eventually switch to NONE.
-	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, elf.ELFOSABI_NONE, elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_EXEC, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_386, elf_file.Header.Machine)
@@ -503,9 +495,7 @@ func checkExecutableX8664NaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf.ELFCLASS64, elf_file.Header.Class)
 	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
-	// Currently still built with the NaCl OSABI...
-	// Will eventually switch to NONE.
-	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, elf.ELFOSABI_NONE, elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_EXEC, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_X86_64, elf_file.Header.Machine)
@@ -546,9 +536,7 @@ func checkExecutableARMNaCl(t *testing.T, fname string) {
 	ExpectEq(t, elf.ELFCLASS32, elf_file.Header.Class)
 	ExpectEq(t, elf.ELFDATA2LSB, elf_file.Header.Data)
 	ExpectEq(t, elf.EV_CURRENT, elf_file.Header.EI_Version)
-	// Currently still built with the NaCl OSABI...
-	// Will eventually switch to NONE.
-	// ExpectEq(t, elf.OSABI(123), elf_file.Header.OSABI)
+	ExpectEq(t, elf.ELFOSABI_NONE, elf_file.Header.OSABI)
 	ExpectEq(t, uint8(0), elf_file.Header.ABIVersion)
 	ExpectEq(t, elf.ET_EXEC, elf_file.Header.Type)
 	ExpectEq(t, elf.EM_ARM, elf_file.Header.Machine)
