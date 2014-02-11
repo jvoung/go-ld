@@ -7,7 +7,7 @@ set -e
 set -u
 set -x
 
-readonly arches="i686 x86_64 arm"
+readonly arches="i686 x86_64 arm mips"
 readonly TC_ROOT=${NACL_SDK_ROOT}/toolchain/linux_pnacl/bin
 
 pushd test_binaries

@@ -8,7 +8,7 @@ set -u
 set -x
 
 readonly SRC=test_binaries/test_relocs.c
-readonly arches="i686 x86_64 arm"
+readonly arches="i686 x86_64 arm mips"
 readonly TC_ROOT=${NACL_SDK_ROOT}/toolchain/linux_pnacl/bin
 
 ${TC_ROOT}/pnacl-clang $SRC -O1 -o /tmp/test_relocs.pexe
