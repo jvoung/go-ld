@@ -40,6 +40,69 @@ type ElfFileHeader struct {
 	Shstrndx       uint16
 }
 
+// PHDRs (elf class 32 and 64 have slightly different layout...)
+type ProgramHeader struct {
+	P_type   elf.ProgType
+	P_flags  elf.ProgFlag // flags after memsz for elf-class 32
+	P_offset uint64
+	P_vaddr  uint64
+	P_paddr  uint64
+	P_filesz uint64
+	P_memsz  uint64
+	P_align  uint64
+}
+
+// Rounded-up Section Headers (elf class 32 and 64 layout is the same order)
+type SectionHeader struct {
+	Sh_name_index uint32
+	Sh_name       string
+	Sh_type       elf.SectionType
+	Sh_flags      elf.SectionFlag // 32 or 64
+	Sh_addr       uint64          // or 32
+	Sh_offset     uint64          // or 32
+	Sh_size       uint64          // or 32
+	Sh_link       uint32
+	Sh_info       uint32
+	Sh_addralign  uint64 // or 32
+	Sh_entsize    uint64 // or 32
+}
+
+// A string table is just an sequence null-terminated strings.
+// The first element of the string table is null (used for non-existent names).
+type StringTable []byte
+
+type ElfFile struct {
+	Body   []byte
+	Header ElfFileHeader
+	Phdrs  []ProgramHeader
+	Shdrs  []SectionHeader
+}
+
+type Elf32Rel struct {
+	R_off  uint32
+	R_info uint32
+}
+
+type Elf64Rela struct {
+	R_off    uint64
+	R_info   uint64
+	R_addend int64
+}
+
+type SymbolTableEntry struct {
+	St_name_index uint32
+	St_name string
+	St_info uint8
+	St_other uint8
+	// read as a uint16
+	// TODO(jvoung): handle files w/ many sections
+	St_shndx elf.SectionIndex
+	St_value uint64 // or uint32
+	St_size uint64 // or uint32
+}
+
+type SymbolTable []SymbolTableEntry
+
 func (h *ElfFileHeader) String() string {
 	return fmt.Sprintf("ELF Header:\n"+
 		"  Class: %s\n"+
@@ -146,18 +209,6 @@ func ReadElfHeader(buf []byte) ElfFileHeader {
 	return header
 }
 
-// PHDRs (elf class 32 and 64 have slightly different layout...)
-type ProgramHeader struct {
-	P_type   elf.ProgType
-	P_flags  elf.ProgFlag // flags after memsz for elf-class 32
-	P_offset uint64
-	P_vaddr  uint64
-	P_paddr  uint64
-	P_filesz uint64
-	P_memsz  uint64
-	P_align  uint64
-}
-
 func readPhdr32(buf []byte, byte_order binary.ByteOrder) ProgramHeader {
 	byte_reader := bytes.NewReader(buf)
 	phdr := ProgramHeader{}
@@ -241,25 +292,6 @@ func ReadProgramHeaders(
 	}
 	return phdrs
 }
-
-// Rounded-up Section Headers (elf class 32 and 64 layout is the same order)
-type SectionHeader struct {
-	Sh_name_index uint32
-	Sh_name       string
-	Sh_type       elf.SectionType
-	Sh_flags      elf.SectionFlag // 32 or 64
-	Sh_addr       uint64          // or 32
-	Sh_offset     uint64          // or 32
-	Sh_size       uint64          // or 32
-	Sh_link       uint32
-	Sh_info       uint32
-	Sh_addralign  uint64 // or 32
-	Sh_entsize    uint64 // or 32
-}
-
-// A string table is just an sequence null-terminated strings.
-// The first element of the string table is null (used for non-existent names).
-type StringTable []byte
 
 func readShdr32(buf []byte, byte_order binary.ByteOrder) SectionHeader {
 	byte_reader := bytes.NewReader(buf)
@@ -360,13 +392,6 @@ func ReadSectionHeaders(buf []byte, fhdr *ElfFileHeader) []SectionHeader {
 	return shdrs
 }
 
-type ElfFile struct {
-	Body   []byte
-	Header ElfFileHeader
-	Phdrs  []ProgramHeader
-	Shdrs  []SectionHeader
-}
-
 // Parse the main headers of the ELF file, and return it.
 // Given these headers we can then start search for the symbol table,
 // and other sections like relocations.
@@ -394,17 +419,6 @@ func ReadElfFileFname(fname string) ElfFile {
 			" error: " + err.Error())
 	}
 	return ReadElfFileFD(f)
-}
-
-type Elf32Rel struct {
-	R_off  uint32
-	R_info uint32
-}
-
-type Elf64Rela struct {
-	R_off    uint64
-	R_info   uint64
-	R_addend int64
 }
 
 // Reads 32-bit .rel from a given section index.
@@ -462,4 +476,12 @@ func Elf64_r_sym(r_info uint64) uint32 {
 
 func Elf64_r_type(r_info uint64) uint32 {
 	return uint32(r_info)
+}
+
+func St_bind(info uint8) elf.SymBind {
+	return elf.SymBind(info >> 4)
+}
+
+func St_type(info uint8) elf.SymType {
+	return elf.SymType(uint8(0xf) & info)
 }

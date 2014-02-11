@@ -13,28 +13,6 @@ import (
 	"io"
 )
 
-type SymbolTableEntry struct {
-	St_name_index uint32
-	St_name string
-	St_info uint8
-	St_other uint8
-	// read as a uint16
-	// TODO(jvoung): handle files w/ many sections
-	St_shndx elf.SectionIndex
-	St_value uint64 // or uint32
-	St_size uint64 // or uint32
-}
-
-type SymbolTable []SymbolTableEntry
-
-func St_bind(info uint8) elf.SymBind {
-	return elf.SymBind(info >> 4)
-}
-
-func St_type(info uint8) elf.SymType {
-	return elf.SymType(uint8(0xf) & info)
-}
-
 func readSymbolEntryPrefix(r io.Reader, bo binary.ByteOrder) (
 	SymbolTableEntry, error) {
 	st_entry := SymbolTableEntry{}
