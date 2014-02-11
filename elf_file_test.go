@@ -75,16 +75,16 @@ func TestRelocatableELFX8632(t *testing.T) {
 	ExpectEq(t, uint32(1), elf_file.Header.E_Version)
 	ExpectEq(t, uint64(0), elf_file.Header.Entry)
 	ExpectEq(t, uint64(0), elf_file.Header.Phoff)
-	ExpectEq(t, uint64(452), elf_file.Header.Shoff)
+	ExpectEq(t, uint64(412), elf_file.Header.Shoff)
 	ExpectEq(t, uint32(0), elf_file.Header.Flags)
 	ExpectEq(t, uint16(52), elf_file.Header.FileHeaderSize)
 	ExpectEq(t, uint16(0), elf_file.Header.Phentsize)
 	ExpectEq(t, uint16(0), elf_file.Header.Phnum)
 	ExpectEq(t, uint16(40), elf_file.Header.Shentsize)
-	ExpectEq(t, uint16(12), elf_file.Header.Shnum)
-	ExpectEq(t, uint16(9), elf_file.Header.Shstrndx)
+	ExpectEq(t, uint16(11), elf_file.Header.Shnum)
+	ExpectEq(t, uint16(8), elf_file.Header.Shstrndx)
 	ExpectEq(t, 0, len(elf_file.Phdrs))
-	ExpectEq(t, 12, len(elf_file.Shdrs))
+	ExpectEq(t, 11, len(elf_file.Shdrs))
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 0, Sh_name: "", Sh_type: elf.SHT_NULL,
 			Sh_flags: 0, Sh_addr: 0, Sh_offset: 0, Sh_size: 0,
@@ -94,13 +94,13 @@ func TestRelocatableELFX8632(t *testing.T) {
 		SectionHeader{Sh_name_index: 16, Sh_name: ".group",
 			Sh_type:  elf.SHT_GROUP,
 			Sh_flags: 0, Sh_addr: 0, Sh_offset: 0x34, Sh_size: 8,
-			Sh_link: 10, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 4},
+			Sh_link: 9, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 4},
 		elf_file.Shdrs[1])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 5, Sh_name: ".text",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: elf.SHF_ALLOC | elf.SHF_EXECINSTR,
-			Sh_addr:  0, Sh_offset: 0x40, Sh_size: 0x100,
+			Sh_addr:  0, Sh_offset: 0x40, Sh_size: 0xe0,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 32, Sh_entsize: 0},
 		elf_file.Shdrs[2])
 	rel_text_index := 3
@@ -108,103 +108,80 @@ func TestRelocatableELFX8632(t *testing.T) {
 		SectionHeader{Sh_name_index: 1, Sh_name: ".rel.text",
 			Sh_type:  elf.SHT_REL,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x5fc, Sh_size: 0x20,
-			Sh_link: 10, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 8},
+			Sh_addr:  0, Sh_offset: 0x5a0, Sh_size: 0x10,
+			Sh_link: 9, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 8},
 		elf_file.Shdrs[rel_text_index])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 75, Sh_name: ".data",
+		SectionHeader{Sh_name_index: 65, Sh_name: ".data",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x140, Sh_size: 0,
+			Sh_addr:  0, Sh_offset: 0x120, Sh_size: 0,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[4])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 11, Sh_name: ".bss",
 			Sh_type:  elf.SHT_NOBITS,
 			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x140, Sh_size: 0x40,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 8, Sh_entsize: 0},
+			Sh_addr:  0, Sh_offset: 0x120, Sh_size: 0x0,
+			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[5])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 81, Sh_name: ".note.NaCl.ABI.x86-32",
+		SectionHeader{Sh_name_index: 71, Sh_name: ".note.NaCl.ABI.x86-32",
 			Sh_type:  elf.SHT_NOTE,
 			Sh_flags: elf.SHF_ALLOC | elf.SHF_GROUP,
-			Sh_addr:  0, Sh_offset: 0x140, Sh_size: 0x1c,
+			Sh_addr:  0, Sh_offset: 0x120, Sh_size: 0x1c,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[6])
-	ExpectEq(t,
-		SectionHeader{Sh_name_index: 39, Sh_name: ".eh_frame",
-			Sh_type:  elf.SHT_PROGBITS,
-			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x15c, Sh_size: 0,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
-		elf_file.Shdrs[7])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 23, Sh_name: ".note.GNU-stack",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x15c, Sh_size: 0,
+			Sh_addr:  0, Sh_offset: 0x13c, Sh_size: 0,
+			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
+		elf_file.Shdrs[7])
+	ExpectEq(t,
+		SectionHeader{Sh_name_index: 39, Sh_name: ".shstrtab",
+			Sh_type:  elf.SHT_STRTAB,
+			Sh_flags: 0,
+			Sh_addr:  0, Sh_offset: 0x13c, Sh_size: 0x5d,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[8])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 49, Sh_name: ".shstrtab",
-			Sh_type:  elf.SHT_STRTAB,
-			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x15c, Sh_size: 0x67,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
-		elf_file.Shdrs[9])
-	ExpectEq(t,
-		SectionHeader{Sh_name_index: 67, Sh_name: ".symtab",
+		SectionHeader{Sh_name_index: 57, Sh_name: ".symtab",
 			Sh_type:  elf.SHT_SYMTAB,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x3a4, Sh_size: 0x120,
-			Sh_link: 11, Sh_info: 13, Sh_addralign: 4, Sh_entsize: 0x10},
-		elf_file.Shdrs[10])
+			Sh_addr:  0, Sh_offset: 0x354, Sh_size: 0x110,
+			Sh_link: 10, Sh_info: 9, Sh_addralign: 4, Sh_entsize: 0x10},
+		elf_file.Shdrs[9])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 59, Sh_name: ".strtab",
+		SectionHeader{Sh_name_index: 49, Sh_name: ".strtab",
 			Sh_type:  elf.SHT_STRTAB,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x4c4, Sh_size: 0x136,
+			Sh_addr:  0, Sh_offset: 0x464, Sh_size: 0x13c,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
-		elf_file.Shdrs[11])
+		elf_file.Shdrs[10])
 
 	// Try reading the symbol table too.
 	st := elf_file.ReadSymbols()
-	ExpectEq(t, 18, len(st))
+	ExpectEq(t, 17, len(st))
 
 	// Check it more deeply.
-	checkSymtabCrtbegin(t, &elf_file, st, 0x40, 128)
+	checkSymtabCrtbegin(t, &elf_file, st, 0xa0, 64)
 
 	// Check the relocations for crtbegin.o
 	rels := elf_file.ReadRel32(rel_text_index)
-	ExpectEq(t, len(rels), 4)
+	ExpectEq(t, len(rels), 2)
 
-	ExpectEq(t, uint32(0x5c), rels[0].R_off)
-	ExpectEq(t, uint32(0x1002), rels[0].R_info)
+	ExpectEq(t, uint32(0xbc), rels[0].R_off)
+	ExpectEq(t, uint32(0xf02), rels[0].R_info)
 	ExpectEq(t, "__pnacl_init_irt", st[Elf32_r_sym(rels[0].R_info)].St_name)
 	ExpectEq(t, elf.R_386_PC32, elf.R_386(Elf32_r_type(rels[0].R_info)))
 
-	ExpectEq(t, uint32(0x9c), rels[1].R_off)
-	ExpectEq(t, uint32(0x1102), rels[1].R_info)
+	ExpectEq(t, uint32(0xc4), rels[1].R_off)
+	ExpectEq(t, uint32(0x1002), rels[1].R_info)
 	ExpectEq(t, "_pnacl_wrapper_start",
 		st[Elf32_r_sym(rels[1].R_info)].St_name)
 	ExpectEq(t, elf.R_386_PC32, elf.R_386(Elf32_r_type(rels[1].R_info)))
-
-	ExpectEq(t, uint32(0xc8), rels[2].R_off)
-	ExpectEq(t, uint32(0xa01), rels[2].R_info)
-	ExpectEq(t, elf.R_386_32, elf.R_386(Elf32_r_type(rels[2].R_info)))
-	ExpectEq(t, elf.STT_SECTION,
-		St_type(st[Elf32_r_sym(rels[2].R_info)].St_info))
-	ExpectEq(t, ".eh_frame",
-		elf_file.Shdrs[st[Elf32_r_sym(rels[2].R_info)].St_shndx].Sh_name)
-
-	ExpectEq(t, uint32(0xce), rels[3].R_off)
-	ExpectEq(t, uint32(0x801), rels[3].R_info)
-	ExpectEq(t, elf.R_386_32, elf.R_386(Elf32_r_type(rels[3].R_info)))
-	ExpectEq(t, elf.STT_SECTION,
-		St_type(st[Elf32_r_sym(rels[3].R_info)].St_info))
-	ExpectEq(t, ".bss",
-		elf_file.Shdrs[st[Elf32_r_sym(rels[3].R_info)].St_shndx].Sh_name)
 }
 
 func TestRelocatableELFX8664(t *testing.T) {
@@ -223,16 +200,16 @@ func TestRelocatableELFX8664(t *testing.T) {
 	ExpectEq(t, uint32(1), elf_file.Header.E_Version)
 	ExpectEq(t, uint64(0), elf_file.Header.Entry)
 	ExpectEq(t, uint64(0), elf_file.Header.Phoff)
-	ExpectEq(t, uint64(584), elf_file.Header.Shoff)
+	ExpectEq(t, uint64(448), elf_file.Header.Shoff)
 	ExpectEq(t, uint32(0), elf_file.Header.Flags)
 	ExpectEq(t, uint16(64), elf_file.Header.FileHeaderSize)
 	ExpectEq(t, uint16(0), elf_file.Header.Phentsize)
 	ExpectEq(t, uint16(0), elf_file.Header.Phnum)
 	ExpectEq(t, uint16(64), elf_file.Header.Shentsize)
-	ExpectEq(t, uint16(12), elf_file.Header.Shnum)
-	ExpectEq(t, uint16(9), elf_file.Header.Shstrndx)
+	ExpectEq(t, uint16(11), elf_file.Header.Shnum)
+	ExpectEq(t, uint16(8), elf_file.Header.Shstrndx)
 	ExpectEq(t, 0, len(elf_file.Phdrs))
-	ExpectEq(t, 12, len(elf_file.Shdrs))
+	ExpectEq(t, 11, len(elf_file.Shdrs))
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 0, Sh_name: "", Sh_type: elf.SHT_NULL,
 			Sh_flags: 0, Sh_addr: 0, Sh_offset: 0, Sh_size: 0,
@@ -242,13 +219,13 @@ func TestRelocatableELFX8664(t *testing.T) {
 		SectionHeader{Sh_name_index: 17, Sh_name: ".group",
 			Sh_type:  elf.SHT_GROUP,
 			Sh_flags: 0, Sh_addr: 0, Sh_offset: 0x40, Sh_size: 8,
-			Sh_link: 10, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 4},
+			Sh_link: 9, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 4},
 		elf_file.Shdrs[1])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 6, Sh_name: ".text",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: elf.SHF_ALLOC | elf.SHF_EXECINSTR,
-			Sh_addr:  0, Sh_offset: 0x60, Sh_size: 0x160,
+			Sh_addr:  0, Sh_offset: 0x60, Sh_size: 0xe0,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 32, Sh_entsize: 0},
 		elf_file.Shdrs[2])
 	rela_text_index := 3
@@ -256,77 +233,70 @@ func TestRelocatableELFX8664(t *testing.T) {
 		SectionHeader{Sh_name_index: 1, Sh_name: ".rela.text",
 			Sh_type:  elf.SHT_RELA,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x830, Sh_size: 0xc0,
-			Sh_link: 10, Sh_info: 2, Sh_addralign: 8, Sh_entsize: 0x18},
+			Sh_addr:  0, Sh_offset: 0x758, Sh_size: 0x48,
+			Sh_link: 9, Sh_info: 2, Sh_addralign: 8, Sh_entsize: 0x18},
 		elf_file.Shdrs[rela_text_index])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 76, Sh_name: ".data",
+		SectionHeader{Sh_name_index: 66, Sh_name: ".data",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x1c0, Sh_size: 0,
+			Sh_addr:  0, Sh_offset: 0x140, Sh_size: 0,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[4])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 12, Sh_name: ".bss",
 			Sh_type:  elf.SHT_NOBITS,
 			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x1c0, Sh_size: 0x40,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 8, Sh_entsize: 0},
+			Sh_addr:  0, Sh_offset: 0x140, Sh_size: 0x0,
+			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[5])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 82, Sh_name: ".note.NaCl.ABI.x86-64",
+		SectionHeader{Sh_name_index: 72, Sh_name: ".note.NaCl.ABI.x86-64",
 			Sh_type:  elf.SHT_NOTE,
 			Sh_flags: elf.SHF_ALLOC | elf.SHF_GROUP,
-			Sh_addr:  0, Sh_offset: 0x1c0, Sh_size: 0x1c,
+			Sh_addr:  0, Sh_offset: 0x140, Sh_size: 0x1c,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[6])
-	ExpectEq(t,
-		SectionHeader{Sh_name_index: 40, Sh_name: ".eh_frame",
-			Sh_type:  elf.SHT_PROGBITS,
-			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x1dc, Sh_size: 0,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
-		elf_file.Shdrs[7])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 24, Sh_name: ".note.GNU-stack",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x1dc, Sh_size: 0,
+			Sh_addr:  0, Sh_offset: 0x15c, Sh_size: 0,
+			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
+		elf_file.Shdrs[7])
+	ExpectEq(t,
+		SectionHeader{Sh_name_index: 40, Sh_name: ".shstrtab",
+			Sh_type:  elf.SHT_STRTAB,
+			Sh_flags: 0,
+			Sh_addr:  0, Sh_offset: 0x15c, Sh_size: 0x5e,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[8])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 50, Sh_name: ".shstrtab",
-			Sh_type:  elf.SHT_STRTAB,
-			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x1dc, Sh_size: 0x68,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
-		elf_file.Shdrs[9])
-	ExpectEq(t,
-		SectionHeader{Sh_name_index: 68, Sh_name: ".symtab",
+		SectionHeader{Sh_name_index: 58, Sh_name: ".symtab",
 			Sh_type:  elf.SHT_SYMTAB,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x548, Sh_size: 0x1b0,
-			Sh_link: 11, Sh_info: 13, Sh_addralign: 8, Sh_entsize: 0x18},
-		elf_file.Shdrs[10])
+			Sh_addr:  0, Sh_offset: 0x480, Sh_size: 0x198,
+			Sh_link: 10, Sh_info: 9, Sh_addralign: 8, Sh_entsize: 0x18},
+		elf_file.Shdrs[9])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 60, Sh_name: ".strtab",
+		SectionHeader{Sh_name_index: 50, Sh_name: ".strtab",
 			Sh_type:  elf.SHT_STRTAB,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x6f8, Sh_size: 0x136,
+			Sh_addr:  0, Sh_offset: 0x618, Sh_size: 0x13c,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
-		elf_file.Shdrs[11])
+		elf_file.Shdrs[10])
 	st := elf_file.ReadSymbols()
-	ExpectEq(t, 18, len(st))
+	ExpectEq(t, 17, len(st))
 
 	// Check it more deeply.
-	checkSymtabCrtbegin(t, &elf_file, st, 0x80, 160)
+	checkSymtabCrtbegin(t, &elf_file, st, 0xa0, 64)
 
 	rels := elf_file.ReadRela64(rela_text_index)
-	ExpectEq(t, len(rels), 8)
+	ExpectEq(t, len(rels), 3)
 
-	ExpectEq(t, uint64(0x94), rels[0].R_off)
-	ExpectEq(t, uint64(0x00060000000b), rels[0].R_info)
-	ExpectEq(t, int64(0xa0), rels[0].R_addend)
+	ExpectEq(t, uint64(0xa4), rels[0].R_off)
+	ExpectEq(t, uint64(0x00030000000b), rels[0].R_info)
+	ExpectEq(t, int64(0xc0), rels[0].R_addend)
 	ExpectEq(t, elf.R_X86_64_32S,
 		elf.R_X86_64(Elf64_r_type(rels[0].R_info)))
 	ExpectEq(t, elf.STT_SECTION,
@@ -334,8 +304,8 @@ func TestRelocatableELFX8664(t *testing.T) {
 	ExpectEq(t, ".text",
 		elf_file.Shdrs[st[Elf64_r_sym(rels[0].R_info)].St_shndx].Sh_name)
 
-	ExpectEq(t, uint64(0x99), rels[1].R_off)
-	ExpectEq(t, uint64(0x001000000002), rels[1].R_info)
+	ExpectEq(t, uint64(0xa9), rels[1].R_off)
+	ExpectEq(t, uint64(0x000f00000002), rels[1].R_info)
 	ExpectEq(t, int64(-4), rels[1].R_addend)
 	ExpectEq(t, elf.R_X86_64_PC32,
 		elf.R_X86_64(Elf64_r_type(rels[1].R_info)))
@@ -344,15 +314,15 @@ func TestRelocatableELFX8664(t *testing.T) {
 	ExpectEq(t, "__pnacl_init_irt",
 		st[Elf64_r_sym(rels[1].R_info)].St_name)
 
-	ExpectEq(t, uint64(0xc9), rels[4].R_off)
-	ExpectEq(t, uint64(0x001100000002), rels[4].R_info)
-	ExpectEq(t, int64(-4), rels[4].R_addend)
+	ExpectEq(t, uint64(0xc4), rels[2].R_off)
+	ExpectEq(t, uint64(0x001000000002), rels[2].R_info)
+	ExpectEq(t, int64(-4), rels[2].R_addend)
 	ExpectEq(t, elf.R_X86_64_PC32,
-		elf.R_X86_64(Elf64_r_type(rels[4].R_info)))
+		elf.R_X86_64(Elf64_r_type(rels[2].R_info)))
 	ExpectEq(t, elf.STT_NOTYPE,
-		St_type(st[Elf64_r_sym(rels[4].R_info)].St_info))
+		St_type(st[Elf64_r_sym(rels[2].R_info)].St_info))
 	ExpectEq(t, "_pnacl_wrapper_start",
-		st[Elf64_r_sym(rels[4].R_info)].St_name)
+		st[Elf64_r_sym(rels[2].R_info)].St_name)
 }
 
 func TestRelocatableELFARM(t *testing.T) {
@@ -370,16 +340,16 @@ func TestRelocatableELFARM(t *testing.T) {
 	ExpectEq(t, uint32(1), elf_file.Header.E_Version)
 	ExpectEq(t, uint64(0), elf_file.Header.Entry)
 	ExpectEq(t, uint64(0), elf_file.Header.Phoff)
-	ExpectEq(t, uint64(460), elf_file.Header.Shoff)
+	ExpectEq(t, uint64(372), elf_file.Header.Shoff)
 	ExpectEq(t, uint32(0x5000000), elf_file.Header.Flags)
 	ExpectEq(t, uint16(52), elf_file.Header.FileHeaderSize)
 	ExpectEq(t, uint16(0), elf_file.Header.Phentsize)
 	ExpectEq(t, uint16(0), elf_file.Header.Phnum)
 	ExpectEq(t, uint16(40), elf_file.Header.Shentsize)
-	ExpectEq(t, uint16(12), elf_file.Header.Shnum)
-	ExpectEq(t, uint16(9), elf_file.Header.Shstrndx)
+	ExpectEq(t, uint16(11), elf_file.Header.Shnum)
+	ExpectEq(t, uint16(8), elf_file.Header.Shstrndx)
 	ExpectEq(t, 0, len(elf_file.Phdrs))
-	ExpectEq(t, 12, len(elf_file.Shdrs))
+	ExpectEq(t, 11, len(elf_file.Shdrs))
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 0, Sh_name: "", Sh_type: elf.SHT_NULL,
 			Sh_flags: 0, Sh_addr: 0, Sh_offset: 0, Sh_size: 0,
@@ -389,13 +359,13 @@ func TestRelocatableELFARM(t *testing.T) {
 		SectionHeader{Sh_name_index: 32, Sh_name: ".group",
 			Sh_type:  elf.SHT_GROUP,
 			Sh_flags: 0, Sh_addr: 0, Sh_offset: 0x34, Sh_size: 8,
-			Sh_link: 10, Sh_info: 5, Sh_addralign: 4, Sh_entsize: 4},
+			Sh_link: 9, Sh_info: 5, Sh_addralign: 4, Sh_entsize: 4},
 		elf_file.Shdrs[1])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 5, Sh_name: ".text",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: elf.SHF_ALLOC | elf.SHF_EXECINSTR,
-			Sh_addr:  0, Sh_offset: 0x40, Sh_size: 0xe8,
+			Sh_addr:  0, Sh_offset: 0x40, Sh_size: 0x98,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 16, Sh_entsize: 0},
 		elf_file.Shdrs[2])
 	rel_text_index := 3
@@ -403,101 +373,81 @@ func TestRelocatableELFARM(t *testing.T) {
 		SectionHeader{Sh_name_index: 1, Sh_name: ".rel.text",
 			Sh_type:  elf.SHT_REL,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x63c, Sh_size: 0x40,
-			Sh_link: 10, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 8},
+			Sh_addr:  0, Sh_offset: 0x5b4, Sh_size: 0x10,
+			Sh_link: 9, Sh_info: 2, Sh_addralign: 4, Sh_entsize: 8},
 		elf_file.Shdrs[rel_text_index])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 94, Sh_name: ".data",
+		SectionHeader{Sh_name_index: 84, Sh_name: ".data",
 			Sh_type:  elf.SHT_PROGBITS,
 			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x128, Sh_size: 0,
+			Sh_addr:  0, Sh_offset: 0xd8, Sh_size: 0,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[4])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 11, Sh_name: ".bss",
 			Sh_type:  elf.SHT_NOBITS,
 			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x128, Sh_size: 0x40,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 8, Sh_entsize: 0},
+			Sh_addr:  0, Sh_offset: 0xd8, Sh_size: 0x0,
+			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[5])
 	SHT_ARM_ATTRIBUTES := elf.SectionType(0x70000003)
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 16, Sh_name: ".ARM.attributes",
 			Sh_type:  SHT_ARM_ATTRIBUTES,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x128, Sh_size: 0x26,
+			Sh_addr:  0, Sh_offset: 0xd8, Sh_size: 0x26,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[6])
 	ExpectEq(t,
 		SectionHeader{Sh_name_index: 39, Sh_name: ".note.NaCl.ABI.arm",
 			Sh_type:  elf.SHT_NOTE,
 			Sh_flags: elf.SHF_ALLOC | elf.SHF_GROUP,
-			Sh_addr:  0, Sh_offset: 0x150, Sh_size: 0x18,
+			Sh_addr:  0, Sh_offset: 0x100, Sh_size: 0x18,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
 		elf_file.Shdrs[7])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 58, Sh_name: ".eh_frame",
-			Sh_type:  elf.SHT_PROGBITS,
-			Sh_flags: elf.SHF_WRITE | elf.SHF_ALLOC,
-			Sh_addr:  0, Sh_offset: 0x168, Sh_size: 0,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 4, Sh_entsize: 0},
+		SectionHeader{Sh_name_index: 58, Sh_name: ".shstrtab",
+			Sh_type:  elf.SHT_STRTAB,
+			Sh_flags: 0,
+			Sh_addr:  0, Sh_offset: 0x118, Sh_size: 0x5a,
+			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
 		elf_file.Shdrs[8])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 68, Sh_name: ".shstrtab",
-			Sh_type:  elf.SHT_STRTAB,
-			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x168, Sh_size: 0x64,
-			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
-		elf_file.Shdrs[9])
-	ExpectEq(t,
-		SectionHeader{Sh_name_index: 86, Sh_name: ".symtab",
+		SectionHeader{Sh_name_index: 76, Sh_name: ".symtab",
 			Sh_type:  elf.SHT_SYMTAB,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x3ac, Sh_size: 0x150,
-			Sh_link: 11, Sh_info: 16, Sh_addralign: 4, Sh_entsize: 0x10},
-		elf_file.Shdrs[10])
+			Sh_addr:  0, Sh_offset: 0x32c, Sh_size: 0x140,
+			Sh_link: 10, Sh_info: 12, Sh_addralign: 4, Sh_entsize: 0x10},
+		elf_file.Shdrs[9])
 	ExpectEq(t,
-		SectionHeader{Sh_name_index: 78, Sh_name: ".strtab",
+		SectionHeader{Sh_name_index: 68, Sh_name: ".strtab",
 			Sh_type:  elf.SHT_STRTAB,
 			Sh_flags: 0,
-			Sh_addr:  0, Sh_offset: 0x4fc, Sh_size: 0x13f,
+			Sh_addr:  0, Sh_offset: 0x46c, Sh_size: 0x145,
 			Sh_link: 0, Sh_info: 0, Sh_addralign: 1, Sh_entsize: 0},
-		elf_file.Shdrs[11])
+		elf_file.Shdrs[10])
 
 	st := elf_file.ReadSymbols()
-	ExpectEq(t, 21, len(st))
+	ExpectEq(t, 20, len(st))
 	// Check it more deeply.
-	checkSymtabCrtbegin(t, &elf_file, st, 0x40, 88)
+	checkSymtabCrtbegin(t, &elf_file, st, 0x50, 72)
 
 	// Check the relocations for crtbegin.o
 	rels := elf_file.ReadRel32(rel_text_index)
-	ExpectEq(t, len(rels), 8)
+	ExpectEq(t, len(rels), 2)
 
-	ExpectEq(t, uint32(0x5c), rels[0].R_off)
-	ExpectEq(t, uint32(0x131c), rels[0].R_info)
+	ExpectEq(t, uint32(0x6c), rels[0].R_off)
+	ExpectEq(t, uint32(0x121c), rels[0].R_info)
 	ExpectEq(t, "__pnacl_init_irt", st[Elf32_r_sym(rels[0].R_info)].St_name)
 	ExpectEq(t, elf.R_ARM_PLT32 + 1, // Should be R_ARM_CALL...
 		elf.R_ARM(Elf32_r_type(rels[0].R_info)))
 
-	ExpectEq(t, uint32(0x6c), rels[1].R_off)
-	ExpectEq(t, uint32(0x71c), rels[1].R_info)
-	ExpectEq(t, "__do_eh_ctor", st[Elf32_r_sym(rels[1].R_info)].St_name)
+	ExpectEq(t, uint32(0x7c), rels[1].R_off)
+	ExpectEq(t, uint32(0x131c), rels[1].R_info)
+	ExpectEq(t, "_pnacl_wrapper_start",
+		st[Elf32_r_sym(rels[1].R_info)].St_name)
 	ExpectEq(t, elf.R_ARM_PLT32 + 1, // Should be R_ARM_CALL...
 		elf.R_ARM(Elf32_r_type(rels[1].R_info)))
-
-	ExpectEq(t, uint32(0xb0), rels[3].R_off)
-	ExpectEq(t, uint32(0x62b), rels[3].R_info)
-	ExpectEq(t, "__EH_FRAME_BEGIN__",
-		st[Elf32_r_sym(rels[3].R_info)].St_name)
-	ExpectEq(t, uint8(43), // R_ARM_MOVW_ABS_NC
-		Elf32_r_type(rels[3].R_info))
-
-	ExpectEq(t, uint32(0xb4), rels[4].R_off)
-	ExpectEq(t, uint32(0x62c), rels[4].R_info)
-	ExpectEq(t, "__EH_FRAME_BEGIN__",
-		st[Elf32_r_sym(rels[4].R_info)].St_name)
-	ExpectEq(t, uint8(44), // R_ARM_MOVT_ABS
-		Elf32_r_type(rels[4].R_info))
 }
 
 func alignTo(addr uint64, alignment uint64) uint64 {
