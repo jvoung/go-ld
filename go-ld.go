@@ -11,9 +11,11 @@ import (
 	"os"
 )
 
+// This only handles .o files for now. For .a files, we'd need
+// to have a list of SymbolTables (one for each archive member).
 type read_symbols_result struct {
 	fname string
-	st    interface{}
+	st    SymbolTable
 }
 
 func read_symbols_task(fname string, ftyp FileType,
@@ -26,15 +28,8 @@ func read_symbols_task(fname string, ftyp FileType,
 		st := elf_file.ReadSymbols()
 		done_ch <- read_symbols_result{fname, st}
 	case AR_FILE, THIN_AR_FILE:
-		ar_file := ReadARFile(fhandle, ftyp)
-		ar_elf := ar_file.WrapARElf()
-		ar_syms := make(map[string]SymbolTable, len(ar_elf))
-		for fname := range ar_elf {
-			st := ar_elf[fname].File.ReadSymbols()
-			ar_syms[fname] = st
-		}
-		done_ch <- read_symbols_result{fname, ar_syms}
-	default:
+	    panic("Not handling archives for now")
+    default:
 		panic("Unknown file type")
 	}
 }
@@ -65,13 +60,14 @@ func main() {
 		fhandles[fname] = f
 	}
 
-	// Validate that the inputs are really ELF or .a files full of ELF.
+	// Validate that the inputs are really ELF or .a files
+    // full of ELF.
 	file_map := ValidateFiles(fhandles)
 	fmt.Println("File types: ", file_map)
 
-	// Map the files -> symbol tables.
-	// TODO(jvoung): Replace the interface{} with some real interface.
-	fname_symbols := make(map[string]interface{}, len(fhandles))
+	// Map the files (index) -> symbol tables.
+    // Only handle .o files for now.
+    f_symbols := make([]SymbolTable, len(fhandles))
 	// Channel for reading them in parallel.
 	read_symbols := make(chan read_symbols_result, len(fhandles))
 	for fname, ftyp := range file_map {
@@ -79,11 +75,12 @@ func main() {
 	}
 	for i := 0; i < len(file_map); i++ {
 		result := <-read_symbols
-		fname_symbols[result.fname] = result.st
+		f_symbols[i] = result.st
 	}
-	fmt.Println("Fname_symbols: ", fname_symbols)
+	fmt.Println("file symbols: ", f_symbols)
 
 	// Resolve symbols to determine which files to pull in.
+    ResolveSymbols(f_symbols)
 
 	// Figure out which relocations we need.
 

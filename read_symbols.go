@@ -124,10 +124,24 @@ func (f ElfFile) ReadSymbols() SymbolTable {
 	return result
 }
 
+// Set of symbol table indices.
+type IndexSet map[int] bool
+
+// An undefined symbol is from fileA and resolves to a defined
+// symbol in fileB. Represent fileB with an int and the other symbol
+// with another int.
+type Resolver struct {
+  DefFileIndex int
+  DefSymIndex int
+}
+type UndefResolveMap map[int] Resolver
+
 type SymLinkInfo struct {
 	// Index into symbol table for the symbol.
-	UndefinedSyms []int	
-	ExportedSyms []int
+    // These are sets (but use a map to represent that).
+	UndefinedSyms UndefResolveMap
+	ExportedSyms IndexSet
+    ExportedSymHash map[string] int
 }
 
 func GetSymBind(i uint8) elf.SymBind {
@@ -135,13 +149,20 @@ func GetSymBind(i uint8) elf.SymBind {
 }
 
 func GetSymLinkInfo(st SymbolTable) SymLinkInfo {
-	info := SymLinkInfo{}
+	info := SymLinkInfo{ make(map[int] Resolver, 0),
+                         make(map[int] bool, 0),
+                         make(map[string] int, 0) }
 	for i, sym := range st {
+        // Symbol at index 0 is always UNDEF and w/out a name.
+        if i == 0 {
+            continue
+        }
 		if sym.St_shndx == elf.SHN_UNDEF {
-			info.UndefinedSyms = append(info.UndefinedSyms, i)
+			info.UndefinedSyms[i] = Resolver{}
 		} else if GetSymBind(sym.St_info) == elf.STB_GLOBAL {
-			info.ExportedSyms = append(info.ExportedSyms, i)
-		}
+			info.ExportedSyms[i] = true
+            info.ExportedSymHash[sym.St_name] = i
+        }
 	}
 	return info
 }
@@ -151,10 +172,10 @@ func SymLinkInfoToHash(link_info SymLinkInfo,
 	result := make(map[string] *SymbolTableEntry)
 	// UndefinedSyms and ExportedSyms should be unique and not have
 	// local symbols, so we can use a map[string] at this point.
-	for _, index := range link_info.UndefinedSyms {
+	for index := range link_info.UndefinedSyms {
 		result[st[index].St_name] = &st[index]
 	}
-	for _, index := range link_info.ExportedSyms {
+	for index := range link_info.ExportedSyms {
 		result[st[index].St_name] = &st[index]
 	}
 	return result
