@@ -15,6 +15,7 @@ import (
 // to have a list of SymbolTables (one for each archive member).
 type read_symbols_result struct {
 	fname string
+	elf   ElfFile
 	st    SymbolTable
 }
 
@@ -26,7 +27,7 @@ func read_symbols_task(fname string, ftyp FileType,
 	case ELF_FILE:
 		elf_file := ReadElfFileFD(fhandle)
 		st := elf_file.ReadSymbols()
-		done_ch <- read_symbols_result{fname, st}
+		done_ch <- read_symbols_result{fname, elf_file, st}
 	case AR_FILE, THIN_AR_FILE:
 		panic("Not handling archives for now")
 	default:
@@ -68,6 +69,10 @@ func main() {
 	// Map the files (index) -> symbol tables.
 	// Only handle .o files for now.
 	f_symbols := make([]SymbolTable, len(fhandles))
+
+	// Remember the elf files too (section headers, etc.)
+	elf_files := make([]ElfFile, len(fhandles))
+
 	// Channel for reading them in parallel.
 	read_symbols := make(chan read_symbols_result, len(fhandles))
 	for fname, ftyp := range file_map {
@@ -76,6 +81,7 @@ func main() {
 	for i := 0; i < len(file_map); i++ {
 		result := <-read_symbols
 		f_symbols[i] = result.st
+		elf_files[i] = result.elf
 	}
 	fmt.Println("file symbols: ", f_symbols)
 
@@ -86,7 +92,7 @@ func main() {
 	// Pull in the files, and lay them out, adjusting the symbol table values
 	// from offsets to absolute addresses.
 	// All files are needed, assuming no archives.
-	DoLayout(f_symbols)
+	DoLayout(f_symbols, elf_files)
 
 	// Fix up the relocations based on the layout.
 
