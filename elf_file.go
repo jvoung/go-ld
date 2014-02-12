@@ -91,14 +91,14 @@ type Elf64Rela struct {
 
 type SymbolTableEntry struct {
 	St_name_index uint32
-	St_name string
-	St_info uint8
-	St_other uint8
+	St_name       string
+	St_info       uint8
+	St_other      uint8
 	// read as a uint16
 	// TODO(jvoung): handle files w/ many sections
 	St_shndx elf.SectionIndex
 	St_value uint64 // or uint32
-	St_size uint64 // or uint32
+	St_size  uint64 // or uint32
 }
 
 type SymbolTable []SymbolTableEntry
@@ -430,9 +430,9 @@ func (f *ElfFile) ReadRel32(shndx int) []Elf32Rel {
 	}
 	results := []Elf32Rel{}
 	byte_order := ToByteOrder(f.Header.Data)
-	slice := f.Body[sec_hdr.Sh_offset : sec_hdr.Sh_offset +  sec_hdr.Sh_size]
+	slice := f.Body[sec_hdr.Sh_offset : sec_hdr.Sh_offset+sec_hdr.Sh_size]
 	byte_reader := bytes.NewReader(slice)
-	for i := uint64(0); i < sec_hdr.Sh_size ; i += 8 {
+	for i := uint64(0); i < sec_hdr.Sh_size; i += 8 {
 		rel := Elf32Rel{}
 		binary.Read(byte_reader, byte_order, &rel.R_off)
 		binary.Read(byte_reader, byte_order, &rel.R_info)
@@ -450,9 +450,9 @@ func (f *ElfFile) ReadRela64(shndx int) []Elf64Rela {
 	}
 	results := []Elf64Rela{}
 	byte_order := ToByteOrder(f.Header.Data)
-	slice := f.Body[sec_hdr.Sh_offset : sec_hdr.Sh_offset +  sec_hdr.Sh_size]
+	slice := f.Body[sec_hdr.Sh_offset : sec_hdr.Sh_offset+sec_hdr.Sh_size]
 	byte_reader := bytes.NewReader(slice)
-	for i := uint64(0); i < sec_hdr.Sh_size ; i += 24 {
+	for i := uint64(0); i < sec_hdr.Sh_size; i += 24 {
 		rel := Elf64Rela{}
 		binary.Read(byte_reader, byte_order, &rel.R_off)
 		binary.Read(byte_reader, byte_order, &rel.R_info)

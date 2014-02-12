@@ -28,8 +28,8 @@ func read_symbols_task(fname string, ftyp FileType,
 		st := elf_file.ReadSymbols()
 		done_ch <- read_symbols_result{fname, st}
 	case AR_FILE, THIN_AR_FILE:
-	    panic("Not handling archives for now")
-    default:
+		panic("Not handling archives for now")
+	default:
 		panic("Unknown file type")
 	}
 }
@@ -61,13 +61,13 @@ func main() {
 	}
 
 	// Validate that the inputs are really ELF or .a files
-    // full of ELF.
+	// full of ELF.
 	file_map := ValidateFiles(fhandles)
 	fmt.Println("File types: ", file_map)
 
 	// Map the files (index) -> symbol tables.
-    // Only handle .o files for now.
-    f_symbols := make([]SymbolTable, len(fhandles))
+	// Only handle .o files for now.
+	f_symbols := make([]SymbolTable, len(fhandles))
 	// Channel for reading them in parallel.
 	read_symbols := make(chan read_symbols_result, len(fhandles))
 	for fname, ftyp := range file_map {
@@ -80,11 +80,15 @@ func main() {
 	fmt.Println("file symbols: ", f_symbols)
 
 	// Resolve symbols to determine which files to pull in.
-    ResolveSymbols(f_symbols)
+	resolved_sym_info := ResolveSymbols(f_symbols)
+	fmt.Println("resolved symbol info: ", resolved_sym_info)
 
-	// Figure out which relocations we need.
+	// Pull in the files, and lay them out, adjusting the symbol table values
+	// from offsets to absolute addresses.
+	// All files are needed, assuming no archives.
+	DoLayout(f_symbols)
 
-	// Pull in the files, and lay them out.
+	// Fix up the relocations based on the layout.
 
-	// Fix-up the relocations?
+	// Write out the file.
 }
